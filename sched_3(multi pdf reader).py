@@ -1,20 +1,17 @@
 import pandas as pd
 import numpy as np
-import PyQt5 as pqt
 import tabula
-from tabula import read_pdf
 import re
 import glob
 
-########## PDF Import ##########
+# ######### PDF Import ##########
 pdf_files = glob.glob('*.pdf')
 df_list = []
 
 for pdf_file in pdf_files:
     df_list.append(pd.concat(tabula.read_pdf(pdf_file, pages="all")))
 
-
-########## Full Sched of Everyone ##########
+# ######### Full Sched of Everyone ##########
 
 df = pd.concat(df_list)
 df = df.astype(str)
@@ -31,12 +28,11 @@ columns = ['ID', 'Rank'] + [col for col in df.columns if col not in ['ID', 'Rank
 df = df.reindex(columns=columns)
 df = df.reset_index(drop=True)
 
-#get numbers of rows and columns
+# get numbers of rows and columns
 num_rows, num_columns = df.shape
 
 
-
-########## Extract the flights list for this month ##########
+# ######### Extract the flights list for this month ##########
 def extract_digits(row):
     # check if the cell contains a string
     if isinstance(row, str):
@@ -46,6 +42,7 @@ def extract_digits(row):
         return digits
     # if the cell is not a string, return an empty list
     return []
+
 
 # get the 3rd to last columns
 columns_to_search = df.columns[2:-1]
@@ -69,7 +66,7 @@ df_flt_sorted = df_flt.sort_values(by='Flight Number')
 row_labels = list(range(1, len(df_flt_sorted) + 1))
 df_flt_sorted.index = row_labels
 
-#Extract Only Departures
+# Extract Only Departures
 mask = df_flt_sorted.index % 2 == 1
 df_flt_dep_only = df_flt_sorted[mask]
 row_labels = list(range(1, len(df_flt_dep_only) + 1))
@@ -77,46 +74,36 @@ df_flt_dep_only.index = row_labels
 
 flt_amount = df_flt_dep_only.shape
 
-
-########## Schedule sort by Dates ##########
+# ######### Schedule sort by Dates ##########
 
 dates = df.columns[2:]
 flight_numbers = df_flt_dep_only['Flight Number']
 df_new = pd.DataFrame(columns=flight_numbers, index=dates)
 df_id = df.index[2:]
-df_new = df_new.fillna('x')
+df_new = df_new.fillna('')
 
-
-# Check How many Pilot per Flight
-# for date in dates:
-#     for flight_number in flight_numbers:
-#         count = df[date].str.contains(flight_number).sum()
-#         df_new.loc[date, flight_number] = count
-
-# for date in dates:
-#     for flight_number in flight_numbers:
-#         ids = df[df[date].astype(str).str.contains(flight_number)]['ID'].tolist()
-#         ids_str = ' '.join(ids)
-#         df_new.loc[date, flight_number] = ids_str
-
+# Extract ID and Code to df_new
+pattern = r'\b[a-zA-Z]{1}\b'
 for date in dates:
     for flight_number in flight_numbers:
-        ids = df[df[date].astype(str).str.contains(flight_number)]['ID'].tolist()
-        code = str.extract('\d+').fillna('')
-        ids_str = ' '.join(ids)
-        df_new.loc[date, flight_number] = ids_str
+        ids = df[df[date].astype(str).str.contains(flight_number, regex=True)]['ID'].tolist()
+        for id in ids:
+            # extract code (if present) from cell
+            cell_value = df.loc[df['ID'] == id, date].iloc[0]  # extract string value from series
+            match = re.search(pattern, cell_value)  # use new regular expression to match code
+            if match:
+                code = match.group(0)  # extract code from the match
+            else:
+                code = ''
+            # add ID and code to 'df_new' dataframe
+            df_new.loc[date, flight_number] += f" {code} {id}"
 
-
-
-
-
-########## Output ##########
-#print(f'Total {num_rows} rows // {num_columns} columns')
-#print(df.to_string())
-#print("\n")
-#print(f' This Month Total {flt_amount} Flights)')
-#print(df_flt_dep_only.to_string())
-#print("\n")
-#print(df_new.to_string())
-#print("\n")
-print(code)
+# ######### Output ##########
+# print(f'Total {num_rows} rows // {num_columns} columns')
+print(df.to_string())
+# print("\n")
+# print(f' This Month Total {flt_amount} Flights)')
+# print(df_flt_dep_only.to_string())
+# print("\n")
+print(df_new.to_string())
+# print("\n")
