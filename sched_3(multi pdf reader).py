@@ -28,11 +28,32 @@ columns = ['ID', 'Rank'] + [col for col in df.columns if col not in ['ID', 'Rank
 df = df.reindex(columns=columns)
 df = df.reset_index(drop=True)
 
+df_all = df.astype(str)
+df_all = df_all.replace(r'\.0', '', regex=True)
+
 # get numbers of rows and columns
-num_rows, num_columns = df.shape
+# num_rows, num_columns = df_all.shape
+# columns_to_search = df_all.columns[2:(num_columns - 1)]
 
+# Shift Triple Asterisks (Midnight Flight) to a new format
+for i in range(len(df_all.columns)):
+    # Convert the column to a string type
+    df_all.iloc[:, i] = df_all.iloc[:, i].astype(str)
 
-# ######### Extract the flights list for this month ##########
+    # Check if the cell contains the pattern '***'
+    triple_asterisks = df_all.iloc[:, i].str.contains(r'\*\*\*')
+
+    # Shift the values in the next column to the current column
+    # and replace the next column with '(shifted)'
+    if i+1 < len(df_all.columns):
+        df_all.loc[triple_asterisks, df_all.columns[i]] = (
+                df_all.loc[triple_asterisks, df_all.columns[i + 1]]
+                + ' '
+                + df_all.loc[triple_asterisks, df_all.columns[i]]
+        )
+        df_all.loc[triple_asterisks, df_all.columns[i+1]] = '<<<(shifted)'
+
+# ######## Extract the flights list for this month ##########
 def extract_digits(row):
     # check if the cell contains a string
     if isinstance(row, str):
@@ -45,12 +66,12 @@ def extract_digits(row):
 
 
 # get the 3rd to last columns
-columns_to_search = df.columns[2:-1]
+columns_to_search = df_all.columns[2:-1]
 
 # create an empty list to store the extracted digits
 extracted_digits = []
 
-for index, row in df.iterrows():
+for index, row in df_all.iterrows():
     # loop through the specified columns
     for column in columns_to_search:
         # apply the extract_digits function to each cell
@@ -67,7 +88,8 @@ row_labels = list(range(1, len(df_flt_sorted) + 1))
 df_flt_sorted.index = row_labels
 
 # Extract Only Departures
-mask = df_flt_sorted.index % 2 == 1
+index_array = np.array(df_flt_sorted.index)
+mask = index_array % 2 == 1
 df_flt_dep_only = df_flt_sorted[mask]
 row_labels = list(range(1, len(df_flt_dep_only) + 1))
 df_flt_dep_only.index = row_labels
@@ -76,34 +98,34 @@ flt_amount = df_flt_dep_only.shape
 
 # ######### Schedule sort by Dates ##########
 
-dates = df.columns[2:]
+dates = df_all.columns[2:]
 flight_numbers = df_flt_dep_only['Flight Number']
-df_new = pd.DataFrame(columns=flight_numbers, index=dates)
-df_id = df.index[2:]
-df_new = df_new.fillna('')
+df_date = pd.DataFrame(columns=flight_numbers, index=dates)
+# df_id = df_all.index[2:]
+df_date = df_date.fillna('')
 
-# Extract ID and Code to df_new
+# Extract ID and Code to df_date
 pattern = r'\b[a-zA-Z]{1}\b'
 for date in dates:
     for flight_number in flight_numbers:
-        ids = df[df[date].astype(str).str.contains(flight_number, regex=True)]['ID'].tolist()
+        ids = df_all[df_all[date].astype(str).str.contains(flight_number, regex=True)]['ID'].tolist()
         for id in ids:
             # extract code (if present) from cell
-            cell_value = df.loc[df['ID'] == id, date].iloc[0]  # extract string value from series
+            cell_value = df_all.loc[df_all['ID'] == id, date].iloc[0]  # extract string value from series
             match = re.search(pattern, cell_value)  # use new regular expression to match code
             if match:
                 code = match.group(0)  # extract code from the match
             else:
                 code = ''
-            # add ID and code to 'df_new' dataframe
-            df_new.loc[date, flight_number] += f" {code} {id}"
+            # add ID and code to 'df_date' dataframe
+            df_date.loc[date, flight_number] += f" {code} {id}"
+
 
 # ######### Output ##########
-# print(f'Total {num_rows} rows // {num_columns} columns')
-print(df.to_string())
-# print("\n")
-# print(f' This Month Total {flt_amount} Flights)')
-# print(df_flt_dep_only.to_string())
-# print("\n")
-print(df_new.to_string())
-# print("\n")
+print(df_all.sort_values(by='ID').to_string())
+print('\n')
+print(df_flt_dep_only.to_string())
+print('\n')
+print(df_date.to_string())
+print('\n')
+
