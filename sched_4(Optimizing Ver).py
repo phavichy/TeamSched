@@ -51,7 +51,6 @@ rank_order = {
 # sort df_all by the mapped values
 df_all = df_all.sort_values(by='Rank', key=lambda x: x.map(rank_order))
 
-
 # get numbers of rows and columns
 # num_rows, num_columns = df_all.shape
 # columns_to_search = df_all.columns[2:(num_columns - 1)]
@@ -66,13 +65,14 @@ for i in range(len(df_all.columns)):
 
     # Shift the values in the next column to the current column
     # and replace the next column with '(shifted)'
-    if i+1 < len(df_all.columns):
+    if i + 1 < len(df_all.columns):
         df_all.loc[triple_asterisks, df_all.columns[i]] = (
                 df_all.loc[triple_asterisks, df_all.columns[i + 1]]
                 + ' '
                 + df_all.loc[triple_asterisks, df_all.columns[i]]
         )
-        df_all.loc[triple_asterisks, df_all.columns[i+1]] = '<<<(shifted)'
+        df_all.loc[triple_asterisks, df_all.columns[i + 1]] = '<<<(shifted)'
+
 
 # ######## Extract the flights list for this month ##########
 def extract_digits(row):
@@ -142,7 +142,6 @@ for date in dates:
             # add ID and code to 'df_date' dataframe
             df_date.loc[date, flight_number] += f" {code} {id}"
 
-
 # ######### Output ##########
 print(df_all.to_string())
 print('\n')
@@ -150,4 +149,3 @@ print(df_flt_dep_only.to_string())
 print('\n')
 print(df_date.to_string())
 print('\n')
-
