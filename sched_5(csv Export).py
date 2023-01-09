@@ -3,6 +3,7 @@ import numpy as np
 import tabula
 import re
 import glob
+import datetime
 
 # ######### PDF Import ##########
 pdf_files = glob.glob('*.pdf')
@@ -30,7 +31,8 @@ df = df.reset_index(drop=True)
 
 df_all = df.astype(str)
 df_all = df_all.replace(r'\.0', '', regex=True)
-# create a dictionary that maps rank names to a numerical order
+
+# sort df_all by Rank
 rank_order = {
     'FCIV': 1,
     'FCRV': 2,
@@ -48,12 +50,36 @@ rank_order = {
     'FPX': 14,
     'FPT': 15,
 }
-# sort df_all by the mapped values
 df_all = df_all.sort_values(by='Rank', key=lambda x: x.map(rank_order))
 
-# get numbers of rows and columns
-# num_rows, num_columns = df_all.shape
-# columns_to_search = df_all.columns[2:(num_columns - 1)]
+# Fn to extract flight number from df_all
+def extract_digits(row):
+    # check if the cell contains a string
+    if isinstance(row, str):
+        # extract 3 consecutive standalone digits from the cell
+        digits = re.findall(r'\b\d{3}\b', row)
+        # return a list of extracted digits
+        return digits
+    # if the cell is not a string, return an empty list
+    return []
+
+# Find the flight that depart after midnight
+midnight_flt = []
+for i in range(len(df_all.columns)):
+    df_all.iloc[:, i] = df_all.iloc[:, i].astype(str)
+    triple_asterisks = df_all.iloc[:, i].str.contains(r'\*\*\*')
+    if i + 1 < len(df_all.columns):
+        midnight_flt = df_all.loc[triple_asterisks, df_all.columns[i+1]].apply(extract_digits)
+        midnight_flt = [item for sublist in midnight_flt for item in sublist]
+midnight_flt = list(set(midnight_flt))
+
+# Remove the midnight flight from the first day (asterisk on last day of previous Month
+pattern = '|'.join(midnight_flt)
+
+for i, col in enumerate(df_all.columns):
+    if i == 2:
+        df_all[col] = df_all[col].str.replace(pattern, '')
+
 
 # Shift Triple Asterisks (Midnight Flight) to a new format
 for i in range(len(df_all.columns)):
@@ -74,19 +100,7 @@ for i in range(len(df_all.columns)):
         df_all.loc[triple_asterisks, df_all.columns[i + 1]] = '<<<(shifted)'
 
 
-# ######## Extract the flights list for this month ##########
-def extract_digits(row):
-    # check if the cell contains a string
-    if isinstance(row, str):
-        # extract 3 consecutive standalone digits from the cell
-        digits = re.findall(r'\b\d{3}\b', row)
-        # return a list of extracted digits
-        return digits
-    # if the cell is not a string, return an empty list
-    return []
-
-
-# get the 3rd to last columns
+# Get the list of dates (excluded ID and Rank)
 columns_to_search = df_all.columns[2:-1]
 
 # create an empty list to store the extracted digits
@@ -142,11 +156,25 @@ for date in dates:
             # add ID and code to 'df_date' dataframe
             df_date.loc[date, flight_number] += f" {code} {id}"
 
+
+# ########## Meltdown CSV Format Table ##########
+# rename the dates
+dates = pd.date_range('01/01/2023', '31/01/2023', freq='D')
+
+# Convert the dates to strings
+dates = [d.strftime('%a%d%b') for d in dates]
+
+# Rename the row index of df_date
+df_date.rename(index=dict(zip(df_date.index, dates)), inplace=True)
+
+# Pull the data from each day
+schedules = {}
+
+# Iterate over the dates
+for date in dates:
+    # Select the row for the current date using df.loc
+    df_daybyday = df_date.loc[date]
+
+
 # ######### Output ##########
-print(df_all.to_string())
-print('\n')
-print(df_flt_dep_only.to_string())
-print('\n')
 print(df_date.to_string())
-print('\n')
-df_date.to_excel("output.xlsx")
