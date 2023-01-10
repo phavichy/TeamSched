@@ -51,6 +51,7 @@ rank_order = {
 }
 df_all = df_all.sort_values(by='Rank', key=lambda x: x.map(rank_order))
 
+
 # Fn to extract flight number from df_all
 def extract_digits(row):
     # check if the cell contains a string
@@ -62,13 +63,14 @@ def extract_digits(row):
     # if the cell is not a string, return an empty list
     return []
 
+
 # Find the flight that depart after midnight
 midnight_flt = []
 for i in range(len(df_all.columns)):
     df_all.iloc[:, i] = df_all.iloc[:, i].astype(str)
     triple_asterisks = df_all.iloc[:, i].str.contains(r'\*\*\*')
     if i + 1 < len(df_all.columns):
-        midnight_flt = df_all.loc[triple_asterisks, df_all.columns[i+1]].apply(extract_digits)
+        midnight_flt = df_all.loc[triple_asterisks, df_all.columns[i + 1]].apply(extract_digits)
         midnight_flt = [item for sublist in midnight_flt for item in sublist]
 midnight_flt = list(set(midnight_flt))
 
@@ -78,7 +80,6 @@ midnight_pattern = '|'.join(midnight_flt)
 for i, col in enumerate(df_all.columns):
     if i == 2:
         df_all[col] = df_all[col].str.replace(midnight_pattern, '', regex=True)
-
 
 # Shift Triple Asterisks (Midnight Flight) to a new format
 for i in range(len(df_all.columns)):
@@ -97,7 +98,6 @@ for i in range(len(df_all.columns)):
                 + df_all.loc[triple_asterisks, df_all.columns[i]]
         )
         df_all.loc[triple_asterisks, df_all.columns[i + 1]] = '<<<(shifted)'
-
 
 # Get the list of dates (excluded ID and Rank)
 columns_to_search = df_all.columns[2:-1]
@@ -171,7 +171,8 @@ schedules = {}
 # Iterate over the dates
 df_day_1 = df_date.iloc[0]
 # Create a new dataframe with 8 columns for the pilot IDs and codes
-df_pilots = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Code1', 'Pilot2', 'Code2', 'Pilot3', 'Code3', 'Pilot4', 'Code4'])
+df_pilots = pd.DataFrame(
+    columns=['Flight Number', 'Pilot1', 'Code1', 'Pilot2', 'Code2', 'Pilot3', 'Code3', 'Pilot4', 'Code4'])
 
 # Iterate over each cell in the 'df_day_1' column
 for flight_number, cell in df_day_1.items():
@@ -182,14 +183,30 @@ for flight_number, cell in df_day_1.items():
     # Iterate over the split cell data
     for i, data in enumerate(cell_split):
         # Check if the data is a pilot ID
-        cell_dict[f'Pilot{(i+1)}'] = re.sub(r'\D', '', data)
-        cell_dict[f'Code{(i+1)}'] = re.sub(r'\d', '', data)
+        cell_dict[f'Pilot{(i + 1)}'] = re.sub(r'\D', '', data)
+        cell_dict[f'Code{(i + 1)}'] = re.sub(r'\d', '', data)
     # Append the dictionary as a new row in the 'df_pilots' dataframe
     df_pilots = pd.concat([df_pilots, pd.DataFrame([cell_dict])], ignore_index=True)
     df_pilots = df_pilots.fillna('')
 
 
-
+# def create_grouped_df(group):
+#     df_group = pd.DataFrame(columns=['ID', 'Code'])
+#     df_group['ID'] = group['Pilot{}'.format(i)].values
+#     df_group['Code'] = group['Code{}'.format(i)].values
+#     df_group.set_index('ID', inplace=True)
+#     return df_group
+#
+# df_format = df_pilots.groupby('Flight Number').apply(create_grouped_df)
+ID_data = {}
+Code_data = {}
+Block_data = {}
+for y, fltno in df_pilots.iterrows():
+    for x in range(1,5):
+        ID_data = df_pilots[f'Pilot{x}']
+        Code_data = df_pilots[f'Pilot{x}']
+    print(ID_data, Code_data)
 
 # ######### Output ##########
 print(df_pilots.to_string())
+print()
