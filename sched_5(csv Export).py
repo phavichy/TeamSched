@@ -155,8 +155,6 @@ for date in dates:
             # add ID and code to 'df_date' dataframe
             df_date.loc[date, flight_number] += f"{id}{code} "
 
-
-# ########## Meltdown CSV Format Table ##########
 # rename the dates
 dates = pd.date_range('01/01/2023', '31/01/2023', freq='D')
 
@@ -169,15 +167,16 @@ df_date.rename(index=dict(zip(df_date.index, dates)), inplace=True)
 # Pull the data from each day
 schedules = {}
 
+# ########### Create df to display each day schedule ###########
 # Iterate over the dates
 df_day_1 = df_date.iloc[0]
 # Create a new dataframe with 8 columns for the pilot IDs and codes
-df_pilots = pd.DataFrame(columns=['Pilot1', 'Code1', 'Pilot2', 'Code2', 'Pilot3', 'Code3', 'Pilot4', 'Code4'])
+df_pilots = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Code1', 'Pilot2', 'Code2', 'Pilot3', 'Code3', 'Pilot4', 'Code4'])
 
 # Iterate over each cell in the 'df_day_1' column
-for cell in df_day_1:
+for flight_number, cell in df_day_1.items():
     # Initialize a dictionary to store the pilot IDs and codes
-    cell_dict = {}
+    cell_dict = {'Flight Number': flight_number}
     # Split the cell by space to separate the IDs and codes
     cell_split = cell.split()
     # Iterate over the split cell data
@@ -187,11 +186,10 @@ for cell in df_day_1:
         cell_dict[f'Code{(i+1)}'] = re.sub(r'\d', '', data)
     # Append the dictionary as a new row in the 'df_pilots' dataframe
     df_pilots = pd.concat([df_pilots, pd.DataFrame([cell_dict])], ignore_index=True)
-
+    df_pilots = df_pilots.fillna('')
 
 
 
 
 # ######### Output ##########
-print(df_pilots)
-print(df_day_1)
+print(df_pilots.to_string())
