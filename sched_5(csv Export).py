@@ -3,7 +3,6 @@ import numpy as np
 import tabula
 import re
 import glob
-import datetime
 
 # ######### PDF Import ##########
 pdf_files = glob.glob('*.pdf')
@@ -74,11 +73,11 @@ for i in range(len(df_all.columns)):
 midnight_flt = list(set(midnight_flt))
 
 # Remove the midnight flight from the first day (asterisk on last day of previous Month
-pattern = '|'.join(midnight_flt)
+midnight_pattern = '|'.join(midnight_flt)
 
 for i, col in enumerate(df_all.columns):
     if i == 2:
-        df_all[col] = df_all[col].str.replace(pattern, '')
+        df_all[col] = df_all[col].str.replace(midnight_pattern, '', regex=True)
 
 
 # Shift Triple Asterisks (Midnight Flight) to a new format
@@ -141,7 +140,7 @@ df_date = pd.DataFrame(columns=flight_numbers, index=dates)
 df_date = df_date.fillna('')
 
 # Extract ID and Code to df_date
-pattern = r'\b[a-zA-Z]{1}\b'
+pattern = r'\b[a-zA-Z]{1,2}\b'
 for date in dates:
     for flight_number in flight_numbers:
         ids = df_all[df_all[date].astype(str).str.contains(flight_number, regex=True)]['ID'].tolist()
@@ -154,7 +153,7 @@ for date in dates:
             else:
                 code = ''
             # add ID and code to 'df_date' dataframe
-            df_date.loc[date, flight_number] += f" {code} {id}"
+            df_date.loc[date, flight_number] += f"{id}{code} "
 
 
 # ########## Meltdown CSV Format Table ##########
@@ -171,10 +170,28 @@ df_date.rename(index=dict(zip(df_date.index, dates)), inplace=True)
 schedules = {}
 
 # Iterate over the dates
-for date in dates:
-    # Select the row for the current date using df.loc
-    df_daybyday = df_date.loc[date]
+df_day_1 = df_date.iloc[0]
+# Create a new dataframe with 8 columns for the pilot IDs and codes
+df_pilots = pd.DataFrame(columns=['Pilot1', 'Code1', 'Pilot2', 'Code2', 'Pilot3', 'Code3', 'Pilot4', 'Code4'])
+
+# Iterate over each cell in the 'df_day_1' column
+for cell in df_day_1:
+    # Initialize a dictionary to store the pilot IDs and codes
+    cell_dict = {}
+    # Split the cell by space to separate the IDs and codes
+    cell_split = cell.split()
+    # Iterate over the split cell data
+    for i, data in enumerate(cell_split):
+        # Check if the data is a pilot ID
+        cell_dict[f'Pilot{(i+1)}'] = re.sub(r'\D', '', data)
+        cell_dict[f'Code{(i+1)}'] = re.sub(r'\d', '', data)
+    # Append the dictionary as a new row in the 'df_pilots' dataframe
+    df_pilots = pd.concat([df_pilots, pd.DataFrame([cell_dict])], ignore_index=True)
+
+
+
 
 
 # ######### Output ##########
-print(df_date.to_string())
+print(df_pilots)
+print(df_day_1)
