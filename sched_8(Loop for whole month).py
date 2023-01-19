@@ -186,7 +186,9 @@ df_date.rename(index=dict(zip(df_date.index, dates)), inplace=True)
 # Create a new dataframe with 8 columns for the pilot IDs and codes
 df_pilots = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4', 'Pilot5'])
 df_header = pd.DataFrame(index=['Date'], columns=['Data', 'Code'])
+df_final = pd.DataFrame(index=['Date'], columns=['Data', 'Code'])
 for i, df_day in df_date.iterrows():
+    df_pilots = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4', 'Pilot5'])
     for flight_number, cell in df_day.items():
         cell_dict = {'Flight Number': flight_number}
         cell_split = cell.split()
@@ -213,7 +215,10 @@ for i, df_day in df_date.iterrows():
     df_header.loc['Date', 'Code'] = i
     df_header = df_header.fillna('')
     df_csv2 = pd.concat([df_header, df_csv], ignore_index=True)
-    print(df_csv2)
+    df_final = pd.concat([df_final, df_csv2], ignore_index=True)
+print(df_final.to_string())
+
+
 
 
 
