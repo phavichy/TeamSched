@@ -263,7 +263,7 @@ df_final = df_final.drop(df_final[(cond_rowisempty & cond_aboveisdate)].index).d
 # cond_rowisempty = df_final['Data'].str.match(r'^\s*$') & df_final['Code'].str.match(r'^\s*$')
 # cond_belowis34letters = df_final['next_data'].str.match(r'^\d{3,4}$')
 # # df_final = df_final[cond_rowisempty and cond_belowis34letters].drop(['next_data', 'next_code'], axis=1)
-print(df_final.to_string())
+
 
 # df_final = df_final.replace(r'^\s*$', np.NaN, regex=True)
 # condi1 = (df_final['Code'].str.match(r'^([A-Za-z]{3})(\d{2})([A-Za-z]{3})$'))
@@ -311,9 +311,9 @@ print(df_final.to_string())
 # print()
 #
 # Sched in csv form to support scheduling
-# print(df_final.to_string())
-# print()
+print(df_final.to_string())
+print()
 
 # Create a CSV files
-# df_final.to_csv('SCHED.csv', index=False)
+# df_final.to_csv('SCHED.csv', header=False, index=False)
 # print('Export Completed')
