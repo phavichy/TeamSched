@@ -170,7 +170,7 @@ df_date.rename(index=dict(zip(df_date.index, dates)), inplace=True)
 df_day_1 = df_date.iloc[0]
 # Create a new dataframe with 8 columns for the pilot IDs and codes
 df_pilots = pd.DataFrame(
-    columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4'])
+    columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4', 'Pilot5'])
 
 # Iterate over each cell in the 'df_day_1' column
 for flight_number, cell in df_day_1.items():
@@ -193,7 +193,7 @@ df_pilots["Flight Number"] = df_pilots["Flight Number"].apply(lambda x: 'TG'+str
 df_csv = df_pilots.stack()
 df_csv = pd.DataFrame(df_csv)
 
-df_csv.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': ''}, inplace=True)
+df_csv.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': '', 'Pilot5': ''}, inplace=True)
 df_csv.rename(columns={0: "Data"}, inplace=True)
 df_csv = df_csv.reset_index(drop=True)
 
@@ -205,6 +205,6 @@ for i in range(len(df_csv)):
         df_csv.loc[i, 'Data'] = df_csv.loc[i,'Data']
 df_csv = df_csv.fillna('')
 
-# ######### Output ##########
+
 print(df_csv.to_string())
 #df_csv.to_csv('SCHED.csv', index=False)
