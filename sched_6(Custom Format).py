@@ -170,7 +170,7 @@ df_date.rename(index=dict(zip(df_date.index, dates)), inplace=True)
 df_day_1 = df_date.iloc[0]
 # Create a new dataframe with 8 columns for the pilot IDs and codes
 df_pilots = pd.DataFrame(
-    columns=['Flight Number', 'Pilot1', 'Code1', 'Pilot2', 'Code2', 'Pilot3', 'Code3', 'Pilot4', 'Code4'])
+    columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4'])
 
 # Iterate over each cell in the 'df_day_1' column
 for flight_number, cell in df_day_1.items():
@@ -181,15 +181,38 @@ for flight_number, cell in df_day_1.items():
     # Iterate over the split cell data
     for i, data in enumerate(cell_split):
         # Check if the data is a pilot ID
-        cell_dict[f'Pilot{(i + 1)}'] = re.sub(r'\D', '', data)
-        cell_dict[f'Code{(i + 1)}'] = re.sub(r'\d', '', data)
+        cell_dict[f'Pilot{(i + 1)}'] = data
     # Append the dictionary as a new row in the 'df_pilots' dataframe
     df_pilots = pd.concat([df_pilots, pd.DataFrame([cell_dict])], ignore_index=True)
     df_pilots = df_pilots.fillna('')
 
 
-# ##### Create csv format table #######
+# ########### Create csv format table ###########
+df_csv = df_pilots.drop("Flight Number", axis=1)
+
+# stack the dataframe to make it taller and narrower
+df_csv = df_csv.stack()
+df_csv = pd.DataFrame(df_csv)
+
+#reset the index
+df_csv.reset_index(inplace=True)
+
+# drop the level_1 column
+df_csv = df_csv.drop("level_1", axis=1)
+
+#rename the columns
+df_csv.rename(columns={0: "ID"}, inplace=True)
+
+
+# replace the index with the flight number
+df_csv["level_0"] = df_csv["level_0"].astype(str)
+df_csv["Flight Number"] = df_csv["level_0"].apply(lambda x: x.split("_")[0])
+df_csv.drop("level_0", axis=1, inplace=True)
+
+# reorder the columns
+df_csv = df_csv[["Flight Number","ID"]]
+
 
 
 # ######### Output ##########
-print(df_date.to_string())
+print(df_csv.to_string())
