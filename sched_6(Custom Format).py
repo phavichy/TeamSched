@@ -206,5 +206,32 @@ for i in range(len(df_csv)):
 df_csv = df_csv.fillna('')
 
 
-print(df_csv.to_string())
+
+
+# ############# Output #############
+#Original Sched
+print(df_all.to_string())
+print()
+#
+# #Flight DEP after 0000
+# print(midnight_flt)
+# print()
+#
+# #All DEP flight in this month
+# print(df_flt_dep_only.to_string())
+# print()
+#
+# #Sched in Dates arrange
+# print(df_date.to_string())
+# print()
+#
+# #Sched in a single day (pilots as columns)
+# print(df_pilots.to_string())
+# print()
+#
+# #Sched in csv form to support scheduling
+# print(df_csv.to_string())
+# print()
+
+# Create a CSV files
 #df_csv.to_csv('SCHED.csv', index=False)
