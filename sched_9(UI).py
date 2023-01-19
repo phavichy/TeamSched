@@ -4,15 +4,27 @@ import tabula
 import re
 import glob
 import datetime as dt
-import tkinter as tk
 from tkinter import filedialog
+from tkinter import Tk
 
-# ######### PDF Import ##########
+
+# ######### PDF Import auto##########
 pdf_files = glob.glob('*.pdf')
 df_list = []
 
 for pdf_file in pdf_files:
     df_list.append(pd.concat(tabula.read_pdf(pdf_file, pages="all")))
+
+# ######### PDF Import UI##########
+# root = Tk()
+# root.withdraw()
+#
+# filepaths = filedialog.askopenfilenames(filetypes = (("PDF Files", "*.pdf"), ("All files", "*.*")))
+#
+# df_list = []
+# for pdf_file in filepaths:
+#     df_list.append(pd.concat(tabula.read_pdf(pdf_file, pages="all")))
+
 
 # ######### Full Sched of Everyone ##########
 
@@ -188,6 +200,7 @@ df_date.rename(index=dict(zip(df_date.index, date_index)), inplace=True)
 # Iterate over the dates
 # Create a new dataframe with 8 columns for the pilot IDs and codes
 df_pilots = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4', 'Pilot5'])
+df_pilots_all = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4', 'Pilot5'])
 df_header = pd.DataFrame(index=['Date'], columns=['Data', 'Code'])
 df_final = pd.DataFrame(index=['Date'], columns=['Data', 'Code'])
 for i, df_day in df_date.iterrows():
@@ -199,11 +212,13 @@ for i, df_day in df_date.iterrows():
             cell_dict[f'Pilot{(j + 1)}'] = data
         df_pilots = pd.concat([df_pilots, pd.DataFrame([cell_dict])], ignore_index=True)
     df_pilots = df_pilots.fillna('')
-    # df_pilots["Flight Number"] = df_pilots["Flight Number"].apply(lambda x: 'TG'+str(x))
+    df_pilots2 = pd.concat([pd.DataFrame([[i, '', '', '', '', '']], columns=df_pilots.columns), df_pilots], ignore_index=True)
+    df_pilots_all = pd.concat([df_pilots_all, df_pilots2], ignore_index=True)
     # stack the dataframe to make it taller and narrower
     df_csv = df_pilots.stack()
     df_csv = pd.DataFrame(df_csv)
-    df_csv.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': '', 'Pilot5': ''}, inplace=True)
+    df_csv.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': '', 'Pilot5': ''},
+                  inplace=True)
     df_csv.rename(columns={0: "Data"}, inplace=True)
     df_csv = df_csv.reset_index(drop=True)
     for k in range(len(df_csv)):
@@ -215,10 +230,45 @@ for i, df_day in df_date.iterrows():
             df_csv.loc[k, 'Data'] = df_csv.loc[k,'Data']
     df_csv = df_csv.fillna('')
     df_csv['Code'] = df_csv['Code'].astype(str)
-    df_header.loc['Date', 'Code'] = i
-    df_header = df_header.fillna('')
-    df_csv2 = pd.concat([df_header, df_csv], ignore_index=True)
-    df_final = pd.concat([df_final, df_csv2], ignore_index=True)
+    df_csv['Data'] = df_csv['Data'].astype(str)
+    df_csv = pd.concat([pd.DataFrame([['', i]], columns=df_csv.columns), df_csv], ignore_index=True)
+    df_final = pd.concat([df_final, df_csv], ignore_index=True)
+df_final = df_final.drop(0)
+
+df_final['next_data'] = df_final['Data'].shift(-1)
+df_final['next_code'] = df_final['Code'].shift(-1)
+cond_belowisempty = df_final['next_data'].str.match(r'^\s*$') & df_final['next_code'].str.match(r'^\s*$')
+cond_34letters = (df_final['Data'].str.match(r'^\d{3,4}$'))
+df_final = df_final.drop(df_final[~(cond_34letters & cond_belowisempty)].index, inplace=True)
+cond_belowisempty = []
+cond_34letters = []
+#
+# df_final['next_data'] = df_final['Data'].shift(-1)
+# df_final['next_code'] = df_final['Code'].shift(-1)
+# cond_rowisempty = df_final['Data'].str.match(r'^\s*$') & df_final['Code'].str.match(r'^\s*$')
+# cond_belowis34letters = df_final['next_data'].str.match(r'^\d{3,4}$')
+# # df_final = df_final[cond_rowisempty and cond_belowis34letters].drop(['next_data', 'next_code'], axis=1)
+print(df_final)
+
+# df_final = df_final.replace(r'^\s*$', np.NaN, regex=True)
+# condi1 = (df_final['Code'].str.match(r'^([A-Za-z]{3})(\d{2})([A-Za-z]{3})$'))
+# condi3 = (df_final['Data'].str.match(r'^\s*$'))
+# condi4 = (df_final['Code'].str.match(r'^\s*$'))
+# condition = ((condi1 | condi2) & (df_final['next_data'].isna()) & (df_final['next_code'].isna()))
+# df_final = df_final[condition]
+# df_final = df_final.drop(['next_data', 'next_code'], axis=1)
+#
+# df_final['prev_data'] = df_final['Data'].shift(1)
+# df_final['prev_code'] = df_final['Code'].shift(1)
+# df_final = df_final[((df_final['prev_data'].notna()) | (df_final['prev_code'].notna())) | ((df_final['Data'].notna()) | (df_final['Code'].notna()))]
+# df_final = df_final.drop(['prev_data', 'prev_code'], axis=1)
+
+# df_final['Data'] = df_final['Data'].astype(str).apply(lambda x: 'TG' + x if x.isnumeric() and (len(x) == 3 or len(x) == 4) else x)
+
+
+# df_final = df_final.fillna('')
+# df_final = df_final.reset_index(drop=True)
+
 
 # ############# Output #############
 #Original Sched
@@ -242,7 +292,7 @@ for i, df_day in df_date.iterrows():
 # print()
 #
 # #Sched in a single day (pilots as columns)
-# print(df_pilots.to_string())
+# print(df_pilots_all.to_string())
 # print()
 #
 # Sched in csv form to support scheduling
