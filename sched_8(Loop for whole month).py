@@ -4,6 +4,7 @@ import tabula
 import re
 import glob
 
+
 # ######### PDF Import ##########
 pdf_files = glob.glob('*.pdf')
 df_list = []
@@ -216,7 +217,7 @@ for i, df_day in df_date.iterrows():
     df_header = df_header.fillna('')
     df_csv2 = pd.concat([df_header, df_csv], ignore_index=True)
     df_final = pd.concat([df_final, df_csv2], ignore_index=True)
-print(df_final.to_string())
+
 
 
 
@@ -249,8 +250,8 @@ print(df_final.to_string())
 # print()
 #
 # #Sched in csv form to support scheduling
-
-print()
+# print(df_final.to_string())
+# print()
 
 # Create a CSV files
-#df_csv.to_csv('SCHED.csv', index=False)
+df_final.to_csv('SCHED.csv', index=False)
