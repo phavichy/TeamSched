@@ -239,16 +239,31 @@ df_final['next_data'] = df_final['Data'].shift(-1)
 df_final['next_code'] = df_final['Code'].shift(-1)
 cond_belowisempty = df_final['next_data'].str.match(r'^\s*$') & df_final['next_code'].str.match(r'^\s*$')
 cond_34letters = (df_final['Data'].str.match(r'^\d{3,4}$'))
-df_final = df_final.drop(df_final[~(cond_34letters & cond_belowisempty)].index, inplace=True)
-cond_belowisempty = []
-cond_34letters = []
-#
+df_final = df_final.drop(df_final[cond_belowisempty & cond_34letters].index).drop(columns=['next_data', 'next_code'])
+
+
+# remove empty rows that below row is not empty
+df_final['next_data'] = df_final['Data'].shift(-1)
+df_final['next_code'] = df_final['Code'].shift(-1)
+cond_belowisempty = df_final['next_data'].str.match(r'^\s*$') & df_final['next_code'].str.match(r'^\s*$')
+cond_rowisempty = df_final['Data'].str.match(r'^\s*$') & df_final['Code'].str.match(r'^\s*$')
+cond_isdate = df_final['Data'].str.match(r'^\d{2}\w{3}$')
+df_final = df_final.drop(df_final[(cond_rowisempty & cond_belowisempty) & ~cond_isdate].index).drop(columns=['next_data', 'next_code'])
+
+# remove empty rows below the date
+df_final['prev_code'] = df_final['Code'].shift(1)
+cond_aboveisdate = df_final['prev_code'].str.match(r'^([A-Za-z]{3})(\d{2})([A-Za-z]{3})$')
+cond_rowisempty = df_final['Data'].str.match(r'^\s*$') & df_final['Code'].str.match(r'^\s*$')
+df_final = df_final.drop(df_final[(cond_rowisempty & cond_aboveisdate)].index).drop(columns=['prev_code'])
+
+
+
 # df_final['next_data'] = df_final['Data'].shift(-1)
 # df_final['next_code'] = df_final['Code'].shift(-1)
 # cond_rowisempty = df_final['Data'].str.match(r'^\s*$') & df_final['Code'].str.match(r'^\s*$')
 # cond_belowis34letters = df_final['next_data'].str.match(r'^\d{3,4}$')
 # # df_final = df_final[cond_rowisempty and cond_belowis34letters].drop(['next_data', 'next_code'], axis=1)
-print(df_final)
+print(df_final.to_string())
 
 # df_final = df_final.replace(r'^\s*$', np.NaN, regex=True)
 # condi1 = (df_final['Code'].str.match(r'^([A-Za-z]{3})(\d{2})([A-Za-z]{3})$'))
