@@ -185,34 +185,26 @@ for flight_number, cell in df_day_1.items():
     # Append the dictionary as a new row in the 'df_pilots' dataframe
     df_pilots = pd.concat([df_pilots, pd.DataFrame([cell_dict])], ignore_index=True)
     df_pilots = df_pilots.fillna('')
-
+df_pilots["Flight Number"] = df_pilots["Flight Number"].apply(lambda x: 'TG'+str(x))
 
 # ########### Create csv format table ###########
-df_csv = df_pilots.drop("Flight Number", axis=1)
 
 # stack the dataframe to make it taller and narrower
-df_csv = df_csv.stack()
+df_csv = df_pilots.stack()
 df_csv = pd.DataFrame(df_csv)
 
-#reset the index
-df_csv.reset_index(inplace=True)
+df_csv.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': ''}, inplace=True)
+df_csv.rename(columns={0: "Data"}, inplace=True)
+df_csv = df_csv.reset_index(drop=True)
 
-# drop the level_1 column
-df_csv = df_csv.drop("level_1", axis=1)
-
-#rename the columns
-df_csv.rename(columns={0: "ID"}, inplace=True)
-
-
-# replace the index with the flight number
-df_csv["level_0"] = df_csv["level_0"].astype(str)
-df_csv["Flight Number"] = df_csv["level_0"].apply(lambda x: x.split("_")[0])
-df_csv.drop("level_0", axis=1, inplace=True)
-
-# reorder the columns
-df_csv = df_csv[["Flight Number","ID"]]
-
-
+for i in range(len(df_csv)):
+    if 'TG' not in df_csv.loc[i,'Data']:
+        df_csv.loc[i, 'Code'] = ''.join(c for c in df_csv.loc[i,'Data'] if not c.isdigit())
+        df_csv.loc[i, 'Data'] = ''.join(c for c in df_csv.loc[i, 'Data'] if c.isdigit())
+    else:
+        df_csv.loc[i, 'Data'] = df_csv.loc[i,'Data']
+df_csv = df_csv.fillna('')
 
 # ######### Output ##########
 print(df_csv.to_string())
+#df_csv.to_csv('SCHED.csv', index=False)
