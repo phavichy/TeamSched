@@ -240,4 +240,4 @@ def process_pdfs(pdf_files):
     cond_rowisempty = df_final['Data'].str.match(r'^\s*$') & df_final['Code'].str.match(r'^\s*$')
     df_final = df_final.drop(df_final[(cond_rowisempty & cond_aboveisdate)].index).drop(columns=['prev_code'])
 
-    return df_final
+    return df_all, midnight_flt, df_flt_dep_only, df_passive, df_date, df_pilots_all, df_final
