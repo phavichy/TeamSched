@@ -4,7 +4,7 @@ import tabula
 import re
 
 
-def process_pdfs(pdf_files):
+def sched_process(pdf_files):
     df_list = []
     for pdf_file in pdf_files:
         df_list.append(pd.concat(tabula.read_pdf(pdf_file, pages="all")))
@@ -240,4 +240,6 @@ def process_pdfs(pdf_files):
     cond_rowisempty = df_final['Data'].str.match(r'^\s*$') & df_final['Code'].str.match(r'^\s*$')
     df_final = df_final.drop(df_final[(cond_rowisempty & cond_aboveisdate)].index).drop(columns=['prev_code'])
 
-    return df_final
+    # Text to return a process is completed
+    completed_text = 'Process completed'
+    return df_all, df_flt_dep_only, midnight_flt, df_passive, df_date, df_pilots_all, df_final, completed_text
