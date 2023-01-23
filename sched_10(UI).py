@@ -31,7 +31,7 @@ class Main(QWidget):
         self.selector.addItems(["Show Original Sched", "Show Flights This Month", "Show Flights After Midnight"
                                 , "Show Flights with Passive Pilots", "Show Summary Sched sort by Date"
                                 , "Show Flights Sorts in Vertical List", "Export Flight in CSV Format"])
-        self.show_button = QPushButton("Show", self)
+        self.Go_button = QPushButton("Go", self)
 
         # Set up layout
         layout = QVBoxLayout(self)
@@ -39,11 +39,11 @@ class Main(QWidget):
         layout.addWidget(self.status_bar)
         layout.addWidget(self.file_list)
         layout.addWidget(self.selector)
-        layout.addWidget(self.show_button)
+        layout.addWidget(self.Go_button)
         self.setLayout(layout)
         # Connect Signals & Slots
         self.browse_button.clicked.connect(self.pdf_process)
-        self.show_button.clicked.connect(self.show_activate)
+        self.Go_button.clicked.connect(self.go_activate)
         # Set window properties
         self.setGeometry(200, 200, 640, 480)
         self.setWindowTitle("Sched Team PDF Analyzer")
@@ -60,7 +60,7 @@ class Main(QWidget):
             , self.df_final, completed_text = pp.sched_process(self.pdf_files)
         self.file_list.addItem(completed_text)
 
-    def show_activate(self):
+    def go_activate(self):
         # Show the selected pdf files
         if self.selector.currentText() == "Show Original Sched":
             print(self.df_all.to_string())
