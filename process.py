@@ -9,9 +9,7 @@ def sched_process(pdf_files):
     for pdf_file in pdf_files:
         df_list.append(pd.concat(tabula.read_pdf(pdf_file, pages="all")))
 
-
     # ######### Full Sched of Everyone ##########
-
     df = pd.concat(df_list)
     df = df.astype(str)
     df = df.replace('nan', np.nan)
@@ -21,12 +19,11 @@ def sched_process(pdf_files):
     df['ID'] = df['Name'].str.extract(r'(\d+)')
     df['Rank'] = df['Name'].str.extract(r'\b\d{5}  ([A-Z]{1,4}) ')
 
-    # Remove the original 'Name' column
+    # First Step
     df.drop('Name', axis=1, inplace=True)
     columns = ['ID', 'Rank'] + [col for col in df.columns if col not in ['ID', 'Rank']]
     df = df.reindex(columns=columns)
     df = df.reset_index(drop=True)
-
     df_all = df.astype(str)
     df_all = df_all.replace(r'\.0', '', regex=True)
 
@@ -50,8 +47,7 @@ def sched_process(pdf_files):
     }
     df_all = df_all.sort_values(by='Rank', key=lambda x: x.map(rank_order))
 
-
-    # Fn to extract flight number from df_all
+    # ######## Fn to extract flight number from df_all ###########
     def extract_digits(row):
         # check if the cell contains a string
         if isinstance(row, str):
@@ -62,10 +58,8 @@ def sched_process(pdf_files):
         # if the cell is not a string, return an empty list
         return []
 
-
-    # Find the flight that depart after midnight
+    # ########## Find the flight that depart after midnight ############
     midnight_flt = []
-
 
     for i in range(len(df_all.columns)):
         df_all.iloc[:, i] = df_all.iloc[:, i].astype(str)
@@ -75,11 +69,9 @@ def sched_process(pdf_files):
             midnight_flt = df_all.loc[triple_asterisks, df_all.columns[i + 1]].apply(extract_digits)
             midnight_flt = [item for sublist in midnight_flt for item in sublist]
 
-
     midnight_flt = list(set(midnight_flt))
 
-
-    # Remove the midnight flight from the first day (asterisk on last day of previous Month
+    # ###### Remove the midnight flight from the first day (asterisk on last day of previous Month
     midnight_pattern = '|'.join(midnight_flt)
 
     for i, col in enumerate(df_all.columns):
