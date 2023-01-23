@@ -46,6 +46,7 @@ def sched_process(pdf_files):
         'FPT': 15,
     }
     df_all = df_all.sort_values(by='Rank', key=lambda x: x.map(rank_order))
+    df_all = df_all.reset_index(drop=True)
 
     # ######## Fn to extract flight number from df_all ###########
     def extract_digits(row):
