@@ -1,6 +1,6 @@
 import sys
 import pandas as pd
-import process as pp
+import process2 as pp
 from PyQt6 import QtWidgets
 from PyQt6.QtWidgets import (QApplication, QLabel, QWidget, QComboBox,
                              QListWidget, QPushButton, QFileDialog, QMainWindow,
@@ -30,7 +30,7 @@ class Main(QWidget):
         self.selector = QComboBox(self)
         self.selector.addItems(["Show Original Sched", "Show Flights This Month", "Show Flights After Midnight"
                                 , "Show Flights with Passive Pilots", "Show Summary Sched sort by Date"
-                                , "Show Flights Sorts in Vertical List", "Export Flight in CSV Format"])
+                                , "Show Flights Sorts in Vertical List", "Export Flight in CSV Format", "Export xlsx All"])
         self.Go_button = QPushButton("Go", self)
 
         # Set up layout
@@ -83,6 +83,14 @@ class Main(QWidget):
         elif self.selector.currentText() == "Export Flight in CSV Format":
             self.df_final.to_csv('SCHED.csv', header=False, index=False)
             self.file_list.addItems(["Export Flight in CSV Format Completed", "---------------------"])
+        elif self.selector.currentText() == "Export xlsx All":
+            with pd.ExcelWriter('All.xlsx') as writer:
+                self.df_all.to_excel(writer, sheet_name='Original Sched')
+                self.df_flt_dep_only.to_excel(writer, sheet_name='DEP Flights list')
+                self.df_passive.to_excel(writer, sheet_name='Flight with Passive')
+                self.df_date.to_excel(writer, sheet_name='Flight by Date')
+                self.df_pilots_all.to_excel(writer, sheet_name='Vertical Format')
+                self.df_final.to_excel(writer, sheet_name='SCHED TEAM ONLY format')
         else:
             print("Error: No selection made")
 
