@@ -221,6 +221,7 @@ def sched_process(pdf_files):
         df_csv = pd.concat([pd.DataFrame([['', i]], columns=df_csv.columns), df_csv], ignore_index=True)
         df_final = pd.concat([df_final, df_csv], ignore_index=True)
     df_final = df_final.drop(0)
+    df_final2 = df_final.copy()
 
     df_final['next_data'] = df_final['Data'].shift(-1)
     df_final['next_code'] = df_final['Code'].shift(-1)
@@ -249,4 +250,4 @@ def sched_process(pdf_files):
 
     # Text to return a process is completed
     completed_text = 'Process completed'
-    return df_all, df_dep, midnight_flt, df_passive, df_date, df_pilots_all, df_final, completed_text
+    return df_all, df_dep, midnight_flt, df_passive, df_date, df_pilots_all, df_final, df_final2, completed_text

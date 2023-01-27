@@ -15,12 +15,13 @@ class Main(QWidget):
         self.initUI()
         self.pdf_files = []
         self.df_all = pd.DataFrame()
-        self.df_flt_dep_only = pd.DataFrame()
-        self.midnight_flt = pd.DataFrame()
+        self.df_dep = pd.DataFrame()
+        self.midnight_flt = []
         self.df_passive = pd.DataFrame()
         self.df_date = pd.DataFrame()
         self.df_pilots_all = pd.DataFrame()
         self.df_final = pd.DataFrame()
+        self.df_final2 = pd.DataFrame()
 
     def initUI(self):
         # Widgets
@@ -28,10 +29,17 @@ class Main(QWidget):
         self.status_bar = QLabel("Status", self)
         self.file_list = QListWidget(self)
         self.selector = QComboBox(self)
-        self.selector.addItems(["Show Original Sched", "Show Flights This Month", "Show Flights After Midnight"
-                                , "Show Flights with Passive Pilots", "Show Summary Sched sort by Date"
-                                , "Show Flights Sorts in Vertical List", "Export Flight in CSV Format", "Export xlsx All"])
-        self.Go_button = QPushButton("Go", self)
+        self.selector.addItems(["Show Original Sched",
+                                "Show Flights This Month",
+                                "Show Flights After Midnight",
+                                "Show Flights with Passive Pilots",
+                                "Show Summary Sched sort by Date",
+                                "Show Flights Sorts in Vertical List",
+                                "Show Flight in Team Sched Format with Block",
+                                "Show Flight in Team Sched Format w/o Block"
+                                ])
+        self.Go_button = QPushButton("Show", self)
+        self.Export_button = QPushButton("Export All to .xlsx", self)
 
         # Set up layout
         layout = QVBoxLayout(self)
@@ -40,59 +48,73 @@ class Main(QWidget):
         layout.addWidget(self.file_list)
         layout.addWidget(self.selector)
         layout.addWidget(self.Go_button)
+        layout.addWidget(self.Export_button)
         self.setLayout(layout)
         # Connect Signals & Slots
         self.browse_button.clicked.connect(self.pdf_process)
         self.Go_button.clicked.connect(self.go_activate)
+        self.Export_button.clicked.connect(self.export_xlsx)
         # Set window properties
         self.setGeometry(200, 200, 640, 480)
         self.setWindowTitle("Sched Team PDF Analyzer")
         self.show()
 
     def pdf_process(self):
-        self.file_list.addItems(["PDF Files Selected, Please wait."])
-        self.file_list.addItems(["Now Analyzing PDFs..."])
+        self.file_list.addItems(["Selecting PDF Files, Wait for a Moment", "---------------------"])
         self.pdf_files, _ = QFileDialog.getOpenFileNames(self, "Select PDF Files", "", "PDF Files (*.pdf)")
         self.file_list.addItems(self.pdf_files)
 
         # Process the selected pdf files
-        self.df_all, self.df_flt_dep_only, self.midnight_flt, self.df_passive, self.df_date, self.df_pilots_all \
-            , self.df_final, completed_text = pp.sched_process(self.pdf_files)
+        self.df_all, \
+            self.df_dep, \
+            self.midnight_flt, \
+            self.df_passive, \
+            self.df_date, \
+            self.df_pilots_all, \
+            self.df_final, \
+            self.df_final2, \
+            completed_text \
+            = pp.sched_process(self.pdf_files)
         self.file_list.addItem(completed_text)
 
     def go_activate(self):
         # Show the selected pdf files
         if self.selector.currentText() == "Show Original Sched":
             print(self.df_all.to_string())
-            self.file_list.addItems(["Original Sched Showed", "---------------------"])
+            self.file_list.addItems(["Showing Original Sched", "---------------------"])
         elif self.selector.currentText() == "Show Flights This Month":
-            print(self.df_flt_dep_only)
-            self.file_list.addItems(["Flights This Month Showed", "---------------------"])
+            print(self.df_dep)
+            self.file_list.addItems(["Showing List of Flights This Month", "---------------------"])
         elif self.selector.currentText() == "Show Flights After Midnight":
             print(self.midnight_flt)
-            self.file_list.addItems(["Flights After Midnight Showed", "---------------------"])
+            self.file_list.addItems(["Showing Flights Depart after Midnight", "---------------------"])
         elif self.selector.currentText() == "Show Flights with Passive Pilots":
             print(self.df_passive.to_string())
-            self.file_list.addItems(["Flights with Passive Pilots Showed", "---------------------"])
+            self.file_list.addItems(["Showing Flights with Passive Pilots", "---------------------"])
         elif self.selector.currentText() == "Show Summary Sched sort by Date":
             print(self.df_date.to_string())
-            self.file_list.addItems(["Summary Sched sort by Date Showed", "---------------------"])
+            self.file_list.addItems(["Showing Sched sort by Date", "---------------------"])
         elif self.selector.currentText() == "Show Flights Sorts in Vertical List":
             print(self.df_pilots_all.to_string())
-            self.file_list.addItems(["Flights Sorts in Vertical List Showed", "---------------------"])
-        elif self.selector.currentText() == "Export Flight in CSV Format":
-            self.df_final.to_csv('SCHED.csv', header=False, index=False)
-            self.file_list.addItems(["Export Flight in CSV Format Completed", "---------------------"])
-        elif self.selector.currentText() == "Export xlsx All":
-            with pd.ExcelWriter('All.xlsx') as writer:
-                self.df_all.to_excel(writer, sheet_name='Original Sched')
-                self.df_flt_dep_only.to_excel(writer, sheet_name='DEP Flights list')
-                self.df_passive.to_excel(writer, sheet_name='Flight with Passive')
-                self.df_date.to_excel(writer, sheet_name='Flight by Date')
-                self.df_pilots_all.to_excel(writer, sheet_name='Vertical Format')
-                self.df_final.to_excel(writer, sheet_name='SCHED TEAM ONLY format')
+            self.file_list.addItems(["Showing Flights Sorts in Vertical List", "---------------------"])
+        elif self.selector.currentText() == "Show Flight in Team Sched Format with Block":
+            self.file_list.addItems(["Showing Flight in Team Sched Format with Block", "---------------------"])
+            print(self.df_final2.to_string())
+        elif self.selector.currentText() == "Show Flight in Team Sched Format w/o Block":
+            self.file_list.addItems(["Showing Flight in Team Sched Format w/o Block", "---------------------"])
+            print(self.df_final.to_string())
         else:
             print("Error: No selection made")
+
+    def export_xlsx(self):
+        with pd.ExcelWriter('All FEB.xlsx') as writer:
+            self.df_all.to_excel(writer, sheet_name='Original Sched')
+            self.df_dep.to_excel(writer, sheet_name='DEP Flights list')
+            self.df_passive.to_excel(writer, sheet_name='Flight with Passive')
+            self.df_date.to_excel(writer, sheet_name='Flight by Date')
+            self.df_pilots_all.to_excel(writer, sheet_name='Vertical Format')
+            self.df_final2.to_excel(writer, sheet_name='SCHED TEAM ONLY with Block')
+            self.df_final.to_excel(writer, sheet_name='SCHED TEAM ONLY no Block')
 
 
 if __name__ == '__main__':

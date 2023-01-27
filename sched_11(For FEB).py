@@ -242,6 +242,7 @@ for i, df_day in df_date.iterrows():
     df_csv = pd.concat([pd.DataFrame([['', i]], columns=df_csv.columns), df_csv], ignore_index=True)
     df_final = pd.concat([df_final, df_csv], ignore_index=True)
 df_final = df_final.drop(0)
+df_final2 = df_final.copy()
 
 df_final['next_data'] = df_final['Data'].shift(-1)
 df_final['next_code'] = df_final['Code'].shift(-1)
@@ -267,6 +268,8 @@ df_final = df_final.drop(df_final[(cond_rowisempty & cond_aboveisdate)].index).d
 df_final['Data'] = df_final['Data'].str.replace(r'(\b\d{3}\b)', r'TG\1', regex=True)
 df_final = df_final.reset_index(drop=True)
 
+# Export df_final2 to .xlsx
+df_final2.to_excel('dffinal2.xlsx', index=False)
 
 # ############# Output #############
 #Original Sched
@@ -294,8 +297,8 @@ df_final = df_final.reset_index(drop=True)
 # print()
 #
 # Sched in csv form to support scheduling
-print(df_final.to_string())
-print()
+# print(df_final2.to_string())
+# print()
 
 # Create a CSV files
 # df_final.to_csv('SCHED.csv', header=False, index=False)
