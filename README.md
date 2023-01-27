@@ -1,2 +1,2 @@
-# PyCharm
-PyCharm Projects from Nad
+# Project for TEAM SCHED
+PyCharm Projects by Nad
