@@ -246,7 +246,9 @@ def sched_process(pdf_files):
     df_final = df_final.drop(df_final[(cond_rowisempty & cond_aboveisdate)].index).drop(columns=['prev_code'])
 
     df_final['Data'] = df_final['Data'].str.replace(r'(\b\d{3}\b)', r'TG\1', regex=True)
+    df_final2['Data'] = df_final2['Data'].str.replace(r'(\b\d{3}\b)', r'TG\1', regex=True)
     df_final = df_final.reset_index(drop=True)
+    df_final2 = df_final2.reset_index(drop=True)
 
     # Text to return a process is completed
     completed_text = 'Process completed'
