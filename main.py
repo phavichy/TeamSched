@@ -1,7 +1,7 @@
 import sys
 import pandas as pd
 import process as pp
-from PyQt6 import QtWidgets
+from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import (QApplication, QLabel, QWidget, QComboBox,
                              QListWidget, QPushButton, QFileDialog, QMainWindow,
                              QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
@@ -60,22 +60,15 @@ class Main(QWidget):
         self.show()
 
     def pdf_process(self):
-        self.file_list.addItems(["Selecting PDF Files, Wait for a Moment", "---------------------"])
+        self.file_list.addItems(["Selecting PDF Files", "---------------------"])
         self.pdf_files, _ = QFileDialog.getOpenFileNames(self, "Select PDF Files", "", "PDF Files (*.pdf)")
+        if len(self.pdf_files) == 0:
+            self.file_list.addItem("No PDFs Selected")
+            return
         self.file_list.addItems(self.pdf_files)
-
-        # Process the selected pdf files
-        self.df_all, \
-            self.df_dep, \
-            self.midnight_flt, \
-            self.df_passive, \
-            self.df_date, \
-            self.df_pilots_all, \
-            self.df_final, \
-            self.df_final2, \
-            completed_text \
-            = pp.sched_process(self.pdf_files)
-        self.file_list.addItem(completed_text)
+        self.df_all, self.df_dep, self.midnight_flt, self.df_passive, self.df_date, self.df_pilots_all, self.df_final, \
+            self.df_final2 = pp.sched_process(self.pdf_files)
+        self.file_list.addItem("PDFs Processed, Ready")
 
     def go_activate(self):
         # Show the selected pdf files
@@ -115,6 +108,7 @@ class Main(QWidget):
             self.df_pilots_all.to_excel(writer, sheet_name='Vertical Format')
             self.df_final2.to_excel(writer, sheet_name='SCHED TEAM ONLY with Block')
             self.df_final.to_excel(writer, sheet_name='SCHED TEAM ONLY no Block')
+        self.file_list.addItems(["Exported All to .xlsx", "---------------------"])
 
 
 if __name__ == '__main__':

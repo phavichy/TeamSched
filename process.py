@@ -9,7 +9,7 @@ def sched_process(pdf_files):
     for pdf_file in pdf_files:
         df_list.append(pd.concat(tabula.read_pdf(pdf_file, pages="all")))
 
-    # ######### Full Sched of Everyone ##########
+    # Concat data into df_all
     df = pd.concat(df_list)
     df = df.astype(str)
     df = df.replace('nan', np.nan)
@@ -19,7 +19,6 @@ def sched_process(pdf_files):
     df['ID'] = df['Name'].str.extract(r'(\d+)')
     df['Rank'] = df['Name'].str.extract(r'\b\d{5}  ([A-Z]{1,4}) ')
 
-    # Remove the original 'Name' column
     df.drop('Name', axis=1, inplace=True)
     columns = ['ID', 'Rank'] + [col for col in df.columns if col not in ['ID', 'Rank']]
     df = df.reindex(columns=columns)
@@ -28,7 +27,6 @@ def sched_process(pdf_files):
     df_all = df.astype(str)
     df_all = df_all.replace(r'\.0', '', regex=True)
 
-    # sort df_all by Rank
     rank_order = {
         'FCIV': 1,
         'FCRV': 2,
@@ -50,20 +48,14 @@ def sched_process(pdf_files):
     unnamed_cols = [col for col in df_all.columns if 'Unnamed' in col]
     df_all = df_all.drop(columns=unnamed_cols)
 
-    # print(df_all.to_string())
-
-    # Fn to extract flight number from df_all
     def extract_digits(row):
-        # check if the cell contains a string
         if isinstance(row, str):
-            # extract 3 consecutive standalone digits from the cell
             digits = re.findall(r'\b\d{3,4}\b', row)
-            # return a list of extracted digits
             return digits
-        # if the cell is not a string, return an empty list
         return []
 
-    # Find the flight that depart after midnight
+    # Extract Flight departs after midnight from df_all to midnight_flt[]
+    # Then shifted the ***
     midnight_flt = []
 
     for i in range(len(df_all.columns)):
@@ -76,23 +68,13 @@ def sched_process(pdf_files):
 
     midnight_flt = list(set(midnight_flt))
 
-    # Remove the midnight flight from the first day (asterisk on last day of previous Month
     midnight_pattern = '|'.join(midnight_flt)
-
     for i, col in enumerate(df_all.columns):
         if i == 2:
             df_all[col] = df_all[col].str.replace(midnight_pattern, '', regex=True)
-
-    # Shift Triple Asterisks (Midnight Flight) to a new format
     for i in range(len(df_all.columns)):
-        # Convert the column to a string type
         df_all.iloc[:, i] = df_all.iloc[:, i].astype(str)
-
-        # Check if the cell contains the pattern '***'
         triple_asterisks = df_all.iloc[:, i].str.contains(r'\*\*\*')
-
-        # Shift the values in the next column to the current column
-        # and replace the next column with '(shifted)'
         if i + 1 < len(df_all.columns):
             df_all.loc[triple_asterisks, df_all.columns[i]] = (
                     df_all.loc[triple_asterisks, df_all.columns[i + 1]]
@@ -101,29 +83,21 @@ def sched_process(pdf_files):
             )
             df_all.loc[triple_asterisks, df_all.columns[i + 1]] = '<<<(shifted)'
 
-    # Get the list of dates (excluded ID and Rank)
+    # Extract the flight numbers this month to df_dep
     columns_to_search = df_all.columns[2:-1]
-
-    # create an empty list to store the extracted digits
     extracted_digits = []
 
     for index, row in df_all.iterrows():
-        # loop through the specified columns
         for column in columns_to_search:
-            # apply the extract_digits function to each cell
             cell_digits = extract_digits(row[column])
-            # add the extracted digits to the list
             extracted_digits += cell_digits
 
     df_flt = pd.DataFrame(extracted_digits, columns=['TG'])
-    # remove duplicate rows
     df_flt = df_flt['TG'].unique()
     df_flt = pd.DataFrame(df_flt, columns=['TG'])
-    # Sorts
     df_flt = df_flt.sort_values(by='TG')
     row_labels = list(range(1, len(df_flt) + 1))
     df_flt.index = row_labels
-
     df_flt['TG'] = pd.to_numeric(df_flt['TG'])
     df_flt['TG_prev'] = df_flt['TG'].shift(1)
     df_flt['TG_next'] = df_flt['TG'].shift(-1)
@@ -131,17 +105,15 @@ def sched_process(pdf_files):
         drop=True)
     df_flt = df_flt.drop(columns=['TG_prev', 'TG_next'])
 
-    # Extract Only Departures
     index_array = np.array(df_flt.index)
     mask = index_array % 2 == 0
     df_dep = df_flt[mask]
     row_labels = list(range(1, len(df_dep) + 1))
     df_dep.index = row_labels
 
-    # ######### Extract the flight with Passive Pilot ##########
+    # Extract information of passive pilots to df_passive
     df_passive = pd.DataFrame(columns=['Flight Number', 'Date', 'Pilot'])
     passive_pattern = r'P \d{3,4}\b'
-
     for col in df_all.columns:
         for i, row in df_all[col].items():
             match = re.search(passive_pattern, str(row))
@@ -150,41 +122,32 @@ def sched_process(pdf_files):
                     [df_passive, pd.DataFrame({'Flight Number': [row], 'Date': [col], 'Pilot': df_all.loc[i, 'ID']})],
                     ignore_index=True)
 
-    # # ######### Schedule sort by Dates ##########
-
+    # Re-arrange dataframe to dates as index in df_date
     dates_list = df_all.columns[2:]
     flight_numbers = df_dep['TG'].astype(str).tolist()
     df_date = pd.DataFrame(columns=flight_numbers, index=dates_list)
     df_date = df_date.fillna('')
 
-    # Extract ID and Code to df_date
     pattern = r'\b[a-zA-Z]{1,2}\b'
     for date in dates_list:
         for flight_number in flight_numbers:
             ids = df_all[df_all[date].astype(str).str.contains(flight_number, regex=True)]['ID'].tolist()
             for id in ids:
-                # extract code (if present) from cell
-                cell_value = df_all.loc[df_all['ID'] == id, date].iloc[0]  # extract string value from series
-                match = re.search(pattern, cell_value)  # use new regular expression to match code
+                cell_value = df_all.loc[df_all['ID'] == id, date].iloc[0]
+                match = re.search(pattern, cell_value)
                 if match:
-                    code = match.group(0)  # extract code from the match
+                    code = match.group(0)
                 else:
                     code = ''
-                # add ID and code to 'df_date' dataframe
                 df_date.loc[date, flight_number] += f"{id}{code} "
 
-    # rename the dates
-    dates = pd.date_range('01/01/2023', '31/01/2023', freq='D')
+    dates = pd.date_range('01/FEB/2023', '28/FEB/2023', freq='D')
     date_index = pd.DatetimeIndex(dates)
-    # Convert the dates to strings
     date_index = [d.strftime('%a%d%b') for d in date_index]
 
-    # Rename the row index of df_date
     df_date.rename(index=dict(zip(df_date.index, date_index)), inplace=True)
 
-    # ########### Create df to display each day schedule ###########
-    # Iterate over the dates
-    # Create a new dataframe with 8 columns for the pilot IDs and codes
+    # Create vertical dataframe as df_pilots_all
     df_pilots = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4', 'Pilot5'])
     df_pilots_all = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4', 'Pilot5'])
     df_header = pd.DataFrame(index=['Date'], columns=['Data', 'Code'])
@@ -201,7 +164,8 @@ def sched_process(pdf_files):
         df_pilots2 = pd.concat([pd.DataFrame([[i, '', '', '', '', '']], columns=df_pilots.columns), df_pilots],
                                ignore_index=True)
         df_pilots_all = pd.concat([df_pilots_all, df_pilots2], ignore_index=True)
-        # stack the dataframe to make it taller and narrower
+
+        # create final dataframe as df_final and df_final2
         df_csv = df_pilots.stack()
         df_csv = pd.DataFrame(df_csv)
         df_csv.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': '', 'Pilot5': ''},
@@ -230,7 +194,6 @@ def sched_process(pdf_files):
     df_final = df_final.drop(df_final[cond_belowisempty & cond_34letters].index).drop(
         columns=['next_data', 'next_code'])
 
-    # remove empty rows that below row is not empty
     df_final['next_data'] = df_final['Data'].shift(-1)
     df_final['next_code'] = df_final['Code'].shift(-1)
     cond_belowisempty = df_final['next_data'].str.match(r'^\s*$') & df_final['next_code'].str.match(r'^\s*$')
@@ -239,7 +202,6 @@ def sched_process(pdf_files):
     df_final = df_final.drop(df_final[(cond_rowisempty & cond_belowisempty) & ~cond_isdate].index).drop(
         columns=['next_data', 'next_code'])
 
-    # remove empty rows below the date
     df_final['prev_code'] = df_final['Code'].shift(1)
     cond_aboveisdate = df_final['prev_code'].str.match(r'^([A-Za-z]{3})(\d{2})([A-Za-z]{3})$')
     cond_rowisempty = df_final['Data'].str.match(r'^\s*$') & df_final['Code'].str.match(r'^\s*$')
@@ -250,6 +212,5 @@ def sched_process(pdf_files):
     df_final = df_final.reset_index(drop=True)
     df_final2 = df_final2.reset_index(drop=True)
 
-    # Text to return a process is completed
     completed_text = 'Process completed'
-    return df_all, df_dep, midnight_flt, df_passive, df_date, df_pilots_all, df_final, df_final2, completed_text
+    return df_all, df_dep, midnight_flt, df_passive, df_date, df_pilots_all, df_final, df_final2
