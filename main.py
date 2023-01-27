@@ -1,6 +1,6 @@
 import sys
 import pandas as pd
-import process2 as pp
+import process as pp
 from PyQt6 import QtWidgets
 from PyQt6.QtWidgets import (QApplication, QLabel, QWidget, QComboBox,
                              QListWidget, QPushButton, QFileDialog, QMainWindow,
