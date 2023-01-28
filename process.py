@@ -170,6 +170,7 @@ def sched_process(pdf_files):
                         inplace=True)
         df_stack.rename(columns={0: "Data"}, inplace=True)
         df_stack = df_stack.reset_index(drop=True)
+        df_stack['Code'] = ''
         for k in range(len(df_stack)):
             match = re.search(r'\d{5}', df_stack.loc[k, 'Data'])
             if match:

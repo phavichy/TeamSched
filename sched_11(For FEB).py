@@ -172,6 +172,7 @@ for i, df_1day in df_date.iterrows():
     df_stack.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': ''}, inplace=True)
     df_stack.rename(columns={0: "Data"}, inplace=True)
     df_stack = df_stack.reset_index(drop=True)
+    df_stack['Code'] = ''
     for k in range(len(df_stack)):
         match = re.search(r'\d{5}', df_stack.loc[k, 'Data'])
         if match:
