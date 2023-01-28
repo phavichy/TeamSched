@@ -1,17 +1,31 @@
 import sys
 import pandas as pd
 import process as pp
-from PyQt6.QtCore import QThread, pyqtSignal
-from PyQt6.QtWidgets import (QApplication, QLabel, QWidget, QComboBox,
-                             QListWidget, QPushButton, QFileDialog, QMainWindow,
-                             QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
-
+from PyQt6.QtWidgets import (QApplication,
+                             QLabel,
+                             QWidget,
+                             QComboBox,
+                             QListWidget,
+                             QPushButton,
+                             QFileDialog,
+                             QMainWindow,
+                             QVBoxLayout,
+                             QHBoxLayout,
+                             QGridLayout,
+                             QGroupBox,
                              )
+import openpyxl
 
 
 class Main(QWidget):
     def __init__(self):
         super().__init__()
+        self.browse_button = None
+        self.status_bar = None
+        self.file_list = None
+        self.selector = None
+        self.Go_button = None
+        self.Export_button = None
         self.initUI()
         self.pdf_files = []
         self.df_all = pd.DataFrame()
@@ -19,9 +33,9 @@ class Main(QWidget):
         self.midnight_flt = []
         self.df_passive = pd.DataFrame()
         self.df_date = pd.DataFrame()
-        self.df_pilots_all = pd.DataFrame()
+        self.df_vertical = pd.DataFrame()
         self.df_final = pd.DataFrame()
-        self.df_final2 = pd.DataFrame()
+        self.df_final_block = pd.DataFrame()
 
     def initUI(self):
         # Widgets
@@ -40,7 +54,6 @@ class Main(QWidget):
                                 ])
         self.Go_button = QPushButton("Show", self)
         self.Export_button = QPushButton("Export All to .xlsx", self)
-
         # Set up layout
         layout = QVBoxLayout(self)
         layout.addWidget(self.browse_button)
@@ -66,8 +79,8 @@ class Main(QWidget):
             self.file_list.addItem("No PDFs Selected")
             return
         self.file_list.addItems(self.pdf_files)
-        self.df_all, self.df_dep, self.midnight_flt, self.df_passive, self.df_date, self.df_pilots_all, self.df_final, \
-            self.df_final2 = pp.sched_process(self.pdf_files)
+        self.df_all, self.df_dep, self.midnight_flt, self.df_passive, self.df_date, self.df_vertical, self.df_final, \
+            self.df_final_block = pp.sched_process(self.pdf_files)
         self.file_list.addItem("PDFs Processed, Ready")
 
     def go_activate(self):
@@ -88,11 +101,11 @@ class Main(QWidget):
             print(self.df_date.to_string())
             self.file_list.addItems(["Showing Sched sort by Date", "---------------------"])
         elif self.selector.currentText() == "Show Flights Sorts in Vertical List":
-            print(self.df_pilots_all.to_string())
+            print(self.df_vertical.to_string())
             self.file_list.addItems(["Showing Flights Sorts in Vertical List", "---------------------"])
         elif self.selector.currentText() == "Show Flight in Team Sched Format with Block":
             self.file_list.addItems(["Showing Flight in Team Sched Format with Block", "---------------------"])
-            print(self.df_final2.to_string())
+            print(self.df_final_block.to_string())
         elif self.selector.currentText() == "Show Flight in Team Sched Format w/o Block":
             self.file_list.addItems(["Showing Flight in Team Sched Format w/o Block", "---------------------"])
             print(self.df_final.to_string())
@@ -105,8 +118,8 @@ class Main(QWidget):
             self.df_dep.to_excel(writer, sheet_name='DEP Flights list')
             self.df_passive.to_excel(writer, sheet_name='Flight with Passive')
             self.df_date.to_excel(writer, sheet_name='Flight by Date')
-            self.df_pilots_all.to_excel(writer, sheet_name='Vertical Format')
-            self.df_final2.to_excel(writer, sheet_name='SCHED TEAM ONLY with Block')
+            self.df_vertical.to_excel(writer, sheet_name='Vertical Format')
+            self.df_final_block.to_excel(writer, sheet_name='SCHED TEAM ONLY with Block')
             self.df_final.to_excel(writer, sheet_name='SCHED TEAM ONLY no Block')
         self.file_list.addItems(["Exported All to .xlsx", "---------------------"])
 

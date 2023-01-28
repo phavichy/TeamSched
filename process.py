@@ -5,26 +5,26 @@ import re
 
 
 def sched_process(pdf_files):
-    df_list = []
+    rawdata = []
     for pdf_file in pdf_files:
-        df_list.append(pd.concat(tabula.read_pdf(pdf_file, pages="all")))
+        rawdata.append(pd.concat(tabula.read_pdf(pdf_file, pages="all")))
 
     # Concat data into df_all
-    df = pd.concat(df_list)
-    df = df.astype(str)
-    df = df.replace('nan', np.nan)
-    df = df.fillna('')
-    df = df.replace('\r', ' ', regex=True)
+    df_ori = pd.concat(rawdata)
+    df_ori = df_ori.astype(str)
+    df_ori = df_ori.replace('nan', np.nan)
+    df_ori = df_ori.fillna('')
+    df_ori = df_ori.replace('\r', ' ', regex=True)
 
-    df['ID'] = df['Name'].str.extract(r'(\d+)')
-    df['Rank'] = df['Name'].str.extract(r'\b\d{5}  ([A-Z]{1,4}) ')
+    df_ori['ID'] = df_ori['Name'].str.extract(r'(\d+)')
+    df_ori['Rank'] = df_ori['Name'].str.extract(r'\b\d{5}  ([A-Z]{1,4}) ')
 
-    df.drop('Name', axis=1, inplace=True)
-    columns = ['ID', 'Rank'] + [col for col in df.columns if col not in ['ID', 'Rank']]
-    df = df.reindex(columns=columns)
-    df = df.reset_index(drop=True)
+    df_ori.drop('Name', axis=1, inplace=True)
+    columns = ['ID', 'Rank'] + [col for col in df_ori.columns if col not in ['ID', 'Rank']]
+    df_ori = df_ori.reindex(columns=columns)
+    df_ori = df_ori.reset_index(drop=True)
 
-    df_all = df.astype(str)
+    df_all = df_ori.astype(str)
     df_all = df_all.replace(r'\.0', '', regex=True)
 
     rank_order = {
@@ -48,9 +48,9 @@ def sched_process(pdf_files):
     unnamed_cols = [col for col in df_all.columns if 'Unnamed' in col]
     df_all = df_all.drop(columns=unnamed_cols)
 
-    def extract_digits(row):
-        if isinstance(row, str):
-            digits = re.findall(r'\b\d{3,4}\b', row)
+    def extract_digits(row1):
+        if isinstance(row1, str):
+            digits = re.findall(r'\b\d{3,4}\b', row1)
             return digits
         return []
 
@@ -132,14 +132,14 @@ def sched_process(pdf_files):
     for date in dates_list:
         for flight_number in flight_numbers:
             ids = df_all[df_all[date].astype(str).str.contains(flight_number, regex=True)]['ID'].tolist()
-            for id in ids:
-                cell_value = df_all.loc[df_all['ID'] == id, date].iloc[0]
+            for pilot_id in ids:
+                cell_value = df_all.loc[df_all['ID'] == pilot_id, date].iloc[0]
                 match = re.search(pattern, cell_value)
                 if match:
                     code = match.group(0)
                 else:
                     code = ''
-                df_date.loc[date, flight_number] += f"{id}{code} "
+                df_date.loc[date, flight_number] += f"{pilot_id}{code} "
 
     dates = pd.date_range('01/FEB/2023', '28/FEB/2023', freq='D')
     date_index = pd.DatetimeIndex(dates)
@@ -147,70 +147,69 @@ def sched_process(pdf_files):
 
     df_date.rename(index=dict(zip(df_date.index, date_index)), inplace=True)
 
-    # Create vertical dataframe as df_pilots_all
-    df_pilots = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4', 'Pilot5'])
-    df_pilots_all = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4', 'Pilot5'])
-    df_header = pd.DataFrame(index=['Date'], columns=['Data', 'Code'])
-    df_final = pd.DataFrame(index=['Date'], columns=['Data', 'Code'])
-    for i, df_day in df_date.iterrows():
-        df_pilots = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4', 'Pilot5'])
-        for flight_number, cell in df_day.items():
+    # Create vertical dataframe as df_vertical
+    df_vertical = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4'])
+    df_final = pd.DataFrame(index=['Date'], columns=['Data', 'Date', 'Code'])
+    for i, df_1day in df_date.iterrows():
+        df_pilots = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4'])
+        for flight_number, cell in df_1day.items():
             cell_dict = {'Flight Number': flight_number}
             cell_split = cell.split()
             for j, data in enumerate(cell_split):
                 cell_dict[f'Pilot{(j + 1)}'] = data
             df_pilots = pd.concat([df_pilots, pd.DataFrame([cell_dict])], ignore_index=True)
         df_pilots = df_pilots.fillna('')
-        df_pilots2 = pd.concat([pd.DataFrame([[i, '', '', '', '', '']], columns=df_pilots.columns), df_pilots],
+        df_pilots2 = pd.concat([pd.DataFrame([[i, '', '', '', '']], columns=df_pilots.columns), df_pilots],
                                ignore_index=True)
-        df_pilots_all = pd.concat([df_pilots_all, df_pilots2], ignore_index=True)
+        df_vertical = pd.concat([df_vertical, df_pilots2], ignore_index=True)
 
-        # create final dataframe as df_final and df_final2
-        df_csv = df_pilots.stack()
-        df_csv = pd.DataFrame(df_csv)
-        df_csv.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': '', 'Pilot5': ''},
-                      inplace=True)
-        df_csv.rename(columns={0: "Data"}, inplace=True)
-        df_csv = df_csv.reset_index(drop=True)
-        for k in range(len(df_csv)):
-            match = re.search(r'\d{5}', df_csv.loc[k, 'Data'])
+        # create final dataframe as df_final and df_final_block
+        df_stack = df_pilots.stack()
+        df_stack = pd.DataFrame(df_stack)
+        df_stack.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': ''},
+                        inplace=True)
+        df_stack.rename(columns={0: "Data"}, inplace=True)
+        df_stack = df_stack.reset_index(drop=True)
+        for k in range(len(df_stack)):
+            match = re.search(r'\d{5}', df_stack.loc[k, 'Data'])
             if match:
-                df_csv.loc[k, 'Code'] = ''.join(c for c in df_csv.loc[k, 'Data'] if not c.isdigit())
-                df_csv.loc[k, 'Data'] = ''.join(c for c in df_csv.loc[k, 'Data'] if c.isdigit())
+                df_stack.loc[k, 'Code'] = ''.join(c for c in df_stack.loc[k, 'Data'] if not c.isdigit())
+                df_stack.loc[k, 'Data'] = ''.join(c for c in df_stack.loc[k, 'Data'] if c.isdigit())
             else:
-                df_csv.loc[k, 'Data'] = df_csv.loc[k, 'Data']
-        df_csv = df_csv.fillna('')
-        df_csv['Code'] = df_csv['Code'].astype(str)
-        df_csv['Data'] = df_csv['Data'].astype(str)
-        df_csv = pd.concat([pd.DataFrame([['', i]], columns=df_csv.columns), df_csv], ignore_index=True)
-        df_final = pd.concat([df_final, df_csv], ignore_index=True)
+                df_stack.loc[k, 'Data'] = df_stack.loc[k, 'Data']
+        # create new column in df_stack 'Date' and fill it with empty string as the second column
+        df_stack.insert(1, 'Date', '')
+        df_stack = df_stack.fillna('')
+        df_stack['Data'] = df_stack['Data'].astype(str)
+        df_stack['Date'] = df_stack['Date'].astype(str)
+        df_stack['Code'] = df_stack['Code'].astype(str)
+        df_stack = pd.concat([pd.DataFrame([['', i, '']], columns=df_stack.columns), df_stack], ignore_index=True)
+        df_final = pd.concat([df_final, df_stack], ignore_index=True)
     df_final = df_final.drop(0)
-    df_final2 = df_final.copy()
+    df_final_block = df_final.copy()
 
     df_final['next_data'] = df_final['Data'].shift(-1)
     df_final['next_code'] = df_final['Code'].shift(-1)
-    cond_belowisempty = df_final['next_data'].str.match(r'^\s*$') & df_final['next_code'].str.match(r'^\s*$')
+    cond_below_is_empty = df_final['next_data'].str.match(r'^\s*$') & df_final['next_code'].str.match(r'^\s*$')
     cond_34letters = (df_final['Data'].str.match(r'^\d{3,4}$'))
-    df_final = df_final.drop(df_final[cond_belowisempty & cond_34letters].index).drop(
+    df_final = df_final.drop(df_final[cond_below_is_empty & cond_34letters].index).drop(
         columns=['next_data', 'next_code'])
 
     df_final['next_data'] = df_final['Data'].shift(-1)
     df_final['next_code'] = df_final['Code'].shift(-1)
-    cond_belowisempty = df_final['next_data'].str.match(r'^\s*$') & df_final['next_code'].str.match(r'^\s*$')
-    cond_rowisempty = df_final['Data'].str.match(r'^\s*$') & df_final['Code'].str.match(r'^\s*$')
-    cond_isdate = df_final['Data'].str.match(r'^\d{2}\w{3}$')
-    df_final = df_final.drop(df_final[(cond_rowisempty & cond_belowisempty) & ~cond_isdate].index).drop(
+    cond_below_is_empty = df_final['next_data'].str.match(r'^\s*$') & df_final['next_code'].str.match(r'^\s*$')
+    cond_row_is_empty = df_final['Data'].str.match(r'^\s*$') & df_final['Code'].str.match(r'^\s*$')
+    cond_is_date = df_final['Data'].str.match(r'^\d{2}\w{3}$')
+    df_final = df_final.drop(df_final[(cond_row_is_empty & cond_below_is_empty) & ~cond_is_date].index).drop(
         columns=['next_data', 'next_code'])
 
     df_final['prev_code'] = df_final['Code'].shift(1)
-    cond_aboveisdate = df_final['prev_code'].str.match(r'^([A-Za-z]{3})(\d{2})([A-Za-z]{3})$')
-    cond_rowisempty = df_final['Data'].str.match(r'^\s*$') & df_final['Code'].str.match(r'^\s*$')
-    df_final = df_final.drop(df_final[(cond_rowisempty & cond_aboveisdate)].index).drop(columns=['prev_code'])
+    cond_above_is_date = df_final['prev_code'].str.match(r'^([A-Za-z]{3})(\d{2})([A-Za-z]{3})$')
+    cond_row_is_empty = df_final['Data'].str.match(r'^\s*$') & df_final['Code'].str.match(r'^\s*$')
+    df_final = df_final.drop(df_final[(cond_row_is_empty & cond_above_is_date)].index).drop(columns=['prev_code'])
 
     df_final['Data'] = df_final['Data'].str.replace(r'(\b\d{3}\b)', r'TG\1', regex=True)
-    df_final2['Data'] = df_final2['Data'].str.replace(r'(\b\d{3}\b)', r'TG\1', regex=True)
+    df_final_block['Data'] = df_final_block['Data'].str.replace(r'(\b\d{3}\b)', r'TG\1', regex=True)
     df_final = df_final.reset_index(drop=True)
-    df_final2 = df_final2.reset_index(drop=True)
-
-    completed_text = 'Process completed'
-    return df_all, df_dep, midnight_flt, df_passive, df_date, df_pilots_all, df_final, df_final2
+    df_final_block = df_final_block.reset_index(drop=True)
+    return df_all, df_dep, midnight_flt, df_passive, df_date, df_vertical, df_final, df_final_block
