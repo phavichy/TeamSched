@@ -210,5 +210,4 @@ def sched_process(pdf_files):
     df_final = df_final.reset_index(drop=True)
     df_final_block = df_final_block.reset_index(drop=True)
 
-    df_final_block.to_excel('df_final.xlsx', index=False)
     return df_all, df_dep, midnight_flt, df_passive, df_date, df_vertical, df_final, df_final_block
