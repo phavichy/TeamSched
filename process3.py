@@ -160,7 +160,7 @@ for i, df_1day in df_date.iterrows():
     # create final dataframe as df_final and df_final_block
     df_stack = df_pilots.stack()
     df_stack = pd.DataFrame(df_stack)
-    df_stack.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': ''},
+    df_stack.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': '', 'Pilot5': '', 'Pilot6': ''},
                     inplace=True)
     df_stack.rename(columns={0: "Data"}, inplace=True)
     df_stack = df_stack.reset_index(drop=True)
