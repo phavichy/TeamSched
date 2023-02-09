@@ -137,17 +137,17 @@ def sched_process(pdf_files):
                     code = ''
                 df_date.loc[date, flight_number] += f"{pilot_id}{code} "
 
-    dates = pd.date_range('01/FEB/2023', '28/FEB/2023', freq='D')
+    dates = pd.date_range('01/Jan/2023', '31/Jan/2023', freq='D')
     date_index = pd.DatetimeIndex(dates)
     date_index = [d.strftime('%a%d%b') for d in date_index]
 
     df_date.rename(index=dict(zip(df_date.index, date_index)), inplace=True)
 
     # Create vertical dataframe as df_vertical
-    df_vertical = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4'])
+    df_vertical = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4', 'Pilot5', 'Pilot6'])
     df_final = pd.DataFrame(index=['Date'], columns=['Data', 'Date', 'Code'])
     for i, df_1day in df_date.iterrows():
-        df_pilots = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4'])
+        df_pilots = pd.DataFrame(columns=['Flight Number', 'Pilot1', 'Pilot2', 'Pilot3', 'Pilot4', 'Pilot5', 'Pilot6'])
         for flight_number, cell in df_1day.items():
             cell_dict = {'Flight Number': flight_number}
             cell_split = cell.split()
@@ -155,14 +155,14 @@ def sched_process(pdf_files):
                 cell_dict[f'Pilot{(j + 1)}'] = data
             df_pilots = pd.concat([df_pilots, pd.DataFrame([cell_dict])], ignore_index=True)
         df_pilots = df_pilots.fillna('')
-        df_pilots2 = pd.concat([pd.DataFrame([[i, '', '', '', '']], columns=df_pilots.columns), df_pilots],
+        df_pilots2 = pd.concat([pd.DataFrame([[i, '', '', '', '', '', '']], columns=df_pilots.columns), df_pilots],
                                ignore_index=True)
         df_vertical = pd.concat([df_vertical, df_pilots2], ignore_index=True)
 
         # create final dataframe as df_final and df_final_block
         df_stack = df_pilots.stack()
         df_stack = pd.DataFrame(df_stack)
-        df_stack.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': ''},
+        df_stack.rename(index={'Flight Number': '', 'Pilot1': '', 'Pilot2': '', 'Pilot3': '', 'Pilot4': '', 'Pilot5': '', 'Pilot6': ''},
                         inplace=True)
         df_stack.rename(columns={0: "Data"}, inplace=True)
         df_stack = df_stack.reset_index(drop=True)

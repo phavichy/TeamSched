@@ -1,6 +1,6 @@
 import sys
 import pandas as pd
-import process as pp
+import process2_optimized as pp
 from PyQt6.QtWidgets import (QApplication,
                              QLabel,
                              QWidget,
@@ -68,7 +68,7 @@ class Main(QWidget):
         self.Go_button.clicked.connect(self.go_activate)
         self.Export_button.clicked.connect(self.export_xlsx)
         # Set window properties
-        self.setGeometry(200, 200, 640, 480)
+        self.setGeometry(200, 200, 600, 900)
         self.setWindowTitle("Sched Team PDF Analyzer")
         self.show()
 

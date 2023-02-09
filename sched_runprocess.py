@@ -10,5 +10,5 @@ df_all, df_dep, midnight_flt, df_passive, df_date, df_vertical, df_final, df_fin
 
 end_time = time.time()
 run_time = end_time - start_time
-print(df_final_block)
+print(df_date.to_string())
 print('Total time: ', run_time)
