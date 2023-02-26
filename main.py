@@ -113,7 +113,7 @@ class Main(QWidget):
             print("Error: No selection made")
 
     def export_xlsx(self):
-        with pd.ExcelWriter('All FEB.xlsx') as writer:
+        with pd.ExcelWriter('All MAR.xlsx') as writer:
             self.df_all.to_excel(writer, sheet_name='Original Sched')
             self.df_dep.to_excel(writer, sheet_name='DEP Flights list')
             self.df_passive.to_excel(writer, sheet_name='Flight with Passive')
