@@ -1,7 +1,7 @@
 import glob
 import time
 # from process import sched_process
-from process_main import sched_process
+from process_sub import sched_process
 start_time = time.time()
 
 # Import PDF

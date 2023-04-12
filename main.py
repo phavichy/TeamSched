@@ -1,6 +1,6 @@
 import sys
 import pandas as pd
-import process_main as pp
+import process_sub as pp
 from PyQt6.QtWidgets import (QApplication,
                              QLabel,
                              QWidget,
@@ -113,7 +113,7 @@ class Main(QWidget):
             print("Error: No selection made")
 
     def export_xlsx(self):
-        with pd.ExcelWriter('All APR.xlsx') as writer:
+        with pd.ExcelWriter('Actual MAR23.xlsx') as writer:
             self.df_all.to_excel(writer, sheet_name='Original Sched')
             self.df_dep.to_excel(writer, sheet_name='DEP Flights list')
             self.df_passive.to_excel(writer, sheet_name='Flight with Passive')
