@@ -4,7 +4,7 @@ import re
 
 
 def get_max_pilots(df_date):
-    max_pilots = 0
+    max_pilots = 4
     for _, row in df_date.iterrows():
         for cell in row:
             num_pilots = len(cell.split())
