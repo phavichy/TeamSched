@@ -56,8 +56,9 @@ def body_import(pdf_files):
         triple_asterisks = df_all.iloc[:, i].str.contains(r'\*\*\*')
 
         if i + 1 < len(df_all.columns):
-            midnight_flt = df_all.loc[triple_asterisks, df_all.columns[i + 1]].apply(extract_digits)
-            midnight_flt = [item for sublist in midnight_flt for item in sublist]
+            new_flights = df_all.loc[triple_asterisks, df_all.columns[i + 1]].apply(extract_digits)
+            new_flights = [item for sublist in new_flights for item in sublist]
+            midnight_flt += new_flights  # append new flights to the list
 
     midnight_flt = list(set(midnight_flt))
 
@@ -90,4 +91,4 @@ def body_import(pdf_files):
     df_flt = df_flt.sort_values(by='TG')
     df_flt = df_flt.reset_index(drop=True)
     df_flt.index += 1
-    return df_all, df_flt
+    return df_all, df_flt, midnight_flt

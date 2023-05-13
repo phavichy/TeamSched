@@ -33,6 +33,7 @@ class Main(QWidget):
         self.initUI()
         self.pdf_files = []
         self.df_all = pd.DataFrame()
+        self.midnight_flt = []
         self.df_flt = pd.DataFrame()
         self.df_dep = pd.DataFrame()
         self.df_passive = pd.DataFrame()
@@ -48,6 +49,7 @@ class Main(QWidget):
         self.file_list = QListWidget(self)
         self.selector = QComboBox(self)
         self.selector.addItems(["Show df_all",
+                                "Show midnight_flt",
                                 "Show df_flt",
                                 "Show df_dep",
                                 "Show df_passive",
@@ -84,8 +86,9 @@ class Main(QWidget):
             self.file_list.addItem("No PDFs Selected")
             return
         self.file_list.addItems(self.pdf_files)
-        self.df_all, self.df_flt = b1.body_import(self.pdf_files)
-        self.file_list.addItem("df_all and df_flt ready")
+        self.df_all, self.df_flt, self.midnight_flt = b1.body_import(self.pdf_files)
+        self.file_list.addItem("df_all, df_flt ready")
+        self.file_list.addItem("Please Select applicable Flight Numbers")
         self.process_select_flights()
 
     def process_select_flights(self):
@@ -115,6 +118,9 @@ class Main(QWidget):
         if self.selector.currentText() == "Show df_all":
             print(self.df_all.to_string())
             self.file_list.addItems(["Show df_all", "---------------------"])
+        elif self.selector.currentText() == "Show midnight_flt":
+            print(self.midnight_flt)
+            self.file_list.addItems(["Show midnight_flt", "---------------------"])
         elif self.selector.currentText() == "Show df_flt":
             print(self.df_flt.to_string())
             self.file_list.addItems(["Show df_flt", "---------------------"])
