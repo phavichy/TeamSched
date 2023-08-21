@@ -100,5 +100,8 @@ def count_flights(df_final):
     df_flightcounts = flight_counts.reset_index()
     df_flightcounts.columns = ['Flight Number', 'Count']
 
+    # Sort by the 'Flight Number' column alphabetically
+    df_flightcounts = df_flightcounts.sort_values(by='Flight Number')
+
     return df_flightcounts
 
