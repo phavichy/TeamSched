@@ -41,6 +41,7 @@ class Main(QWidget):
         self.df_vertical = pd.DataFrame()
         self.df_final = pd.DataFrame()
         self.df_final_block = pd.DataFrame()
+        self.df_flightcounts = pd.DataFrame()
 
     def initUI(self):
         # Widgets
@@ -56,7 +57,8 @@ class Main(QWidget):
                                 "Show df_date",
                                 "Show df_vertical",
                                 "Show df_final",
-                                "Show df_final_block"
+                                "Show df_final_block",
+                                "Show df_flightcounts"
                                 ])
         self.Go_button = QPushButton("Show", self)
         self.Export_button = QPushButton("Export All to .xlsx", self)
@@ -80,68 +82,100 @@ class Main(QWidget):
         self.show()
 
     def process_import(self):
-        self.file_list.addItems(["Selecting PDF Files", "---------------------"])
+        self.file_list.addItems(["---------------------", "Selecting PDF Files"])
+        self.file_list.setCurrentRow(self.file_list.count() - 1)
         self.pdf_files, _ = QFileDialog.getOpenFileNames(self, "Select PDF Files", "", "PDF Files (*.pdf)")
         if len(self.pdf_files) == 0:
-            self.file_list.addItem("No PDFs Selected")
+            self.file_list.addItems(["---------------------", "No PDFs Selected"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
             return
+        self.file_list.addItem("---------------------")
         self.file_list.addItems(self.pdf_files)
+        self.file_list.setCurrentRow(self.file_list.count() - 1)
         self.df_all, self.df_flt, self.midnight_flt = b1.body_import(self.pdf_files)
-        self.file_list.addItem("df_all, df_flt ready")
-        self.file_list.addItem("Please Select applicable Flight Numbers")
+        self.file_list.addItems(["---------------------", "df_all ready", "df_flt ready"])
+        self.file_list.setCurrentRow(self.file_list.count() - 1)
+        self.file_list.addItems(["---------------------", "Select Applicable Flight Numbers"])
+        self.file_list.setCurrentRow(self.file_list.count() - 1)
         self.process_select_flights()
 
     def process_select_flights(self):
         self.df_dep = b2.body_select_flt(self.df_flt)
         if self.df_dep is not None:
-            self.file_list.addItem("df_dep ready")
+            self.file_list.addItems(["---------------------", "df_dep ready"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
         else:
-            self.file_list.addItem("No flights selected")
+            self.file_list.addItems(["---------------------", "No Flight selected"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
         self.process_passive()
 
     def process_passive(self):
         self.df_passive = b3.body_passive(self.df_all)
-        self.file_list.addItem("df_passive ready")
+        self.file_list.addItems(["---------------------", "df_passive ready"])
+        self.file_list.setCurrentRow(self.file_list.count() - 1)
         self.process_date()
 
     def process_date(self):
         self.df_date = b4.body_date(self.df_all, self.df_dep)
-        self.file_list.addItem("df_date ready")
+        self.file_list.addItems(["---------------------", "df_date ready"])
+        self.file_list.setCurrentRow(self.file_list.count() - 1)
         self.process_final()
 
     def process_final(self):
         self.df_vertical, self.df_final, self.df_final_block = b5.body_final(self.df_date)
-        self.file_list.addItem("df_vertical, df_final and df_final_block ready")
+        self.file_list.addItems(["---------------------", "df_vertical ready", "df_final ready", "df_final_block ready"])
+        self.file_list.setCurrentRow(self.file_list.count() - 1)
+        self.process_flightcounts()
+
+    def process_flightcounts(self):
+        self.df_flightcounts = b5.count_flights(self.df_final)
+        self.file_list.addItems(["---------------------", "df_flightcounts ready"])
+        self.file_list.setCurrentRow(self.file_list.count() - 1)
+        self.file_list.addItems(["---------------------", "=====SCHED ANALYSIS COMPLETED====="])
+        self.file_list.setCurrentRow(self.file_list.count() - 1)
 
     def output_print(self):
         # Show the selected pdf files
         if self.selector.currentText() == "Show df_all":
             print(self.df_all.to_string())
-            self.file_list.addItems(["Show df_all", "---------------------"])
+            self.file_list.addItems(["---------------------", "Show df_all"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
         elif self.selector.currentText() == "Show midnight_flt":
             print(self.midnight_flt)
-            self.file_list.addItems(["Show midnight_flt", "---------------------"])
+            self.file_list.addItems(["---------------------", "Show midnight_flt"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
         elif self.selector.currentText() == "Show df_flt":
             print(self.df_flt.to_string())
-            self.file_list.addItems(["Show df_flt", "---------------------"])
+            self.file_list.addItems(["---------------------", "Show df_flt"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
         elif self.selector.currentText() == "Show df_dep":
             print(self.df_dep.to_string())
-            self.file_list.addItems(["Show df_dep", "---------------------"])
+            self.file_list.addItems(["---------------------", "Show df_dep"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
         elif self.selector.currentText() == "Show df_passive":
             print(self.df_passive.to_string())
-            self.file_list.addItems(["Show df_passive", "---------------------"])
+            self.file_list.addItems(["---------------------", "Show df_passive"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
         elif self.selector.currentText() == "Show df_date":
             print(self.df_date.to_string())
-            self.file_list.addItems(["Show df_date", "---------------------"])
+            self.file_list.addItems(["---------------------", "Show df_date"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
         elif self.selector.currentText() == "Show df_vertical":
             print(self.df_vertical.to_string())
-            self.file_list.addItems(["Show df_vertical", "---------------------"])
+            self.file_list.addItems(["---------------------", "Show df_vertical"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
         elif self.selector.currentText() == "Show df_final":
             print(self.df_final.to_string())
-            self.file_list.addItems(["Show df_final", "---------------------"])
+            self.file_list.addItems(["---------------------", "Show df_final"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
         elif self.selector.currentText() == "Show df_final_block":
             print(self.df_final_block.to_string())
-            self.file_list.addItems(["Show df_final_block", "---------------------"])
+            self.file_list.addItems(["---------------------", "Show df_final_block"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
+        elif self.selector.currentText() == "Show df_flightcounts":
+            print(self.df_flightcounts.to_string())
+            self.file_list.addItems(["---------------------", "Show df_flightcounts"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
         else:
             print("Error: No selection made")
 
@@ -160,9 +194,12 @@ class Main(QWidget):
                 self.df_vertical.to_excel(writer, sheet_name='Vertical')
                 self.df_final.to_excel(writer, sheet_name='Final')
                 self.df_final_block.to_excel(writer, sheet_name='Final Block')
-            self.file_list.addItems(["Exported All to .xlsx", "---------------------"])
+                self.df_flightcounts.to_excel(writer, sheet_name='Flight Counts')
+            self.file_list.addItems(["---------------------", "=====Exported All to .xlsx====="])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
         else:
-            self.file_list.addItems(["Exporting All canceled", "---------------------"])
+            self.file_list.addItems(["---------------------", "Exporting All canceled"])
+            self.file_list.setCurrentRow(self.file_list.count() - 1)
 
 
 if __name__ == '__main__':

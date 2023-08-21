@@ -86,3 +86,19 @@ def body_final(df_date):
     df_final_block = df_final_block.reset_index(drop=True)
 
     return df_vertical, df_final, df_final_block
+
+
+def count_flights(df_final):
+    # Filter rows containing flight numbers (assuming flight numbers start with 'TG')
+    flight_rows = df_final['Data'].str.startswith('TG')
+    # Get the flight numbers from the filtered rows
+    flight_numbers = df_final.loc[flight_rows, 'Data']
+    # Count the occurrences of each flight number
+    flight_counts = flight_numbers.value_counts()
+
+    # Convert the Series to a DataFrame
+    df_flightcounts = flight_counts.reset_index()
+    df_flightcounts.columns = ['Flight Number', 'Count']
+
+    return df_flightcounts
+
