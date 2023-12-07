@@ -44,7 +44,10 @@ def body_date(df_all, df_dep):
     if year is None or month is None:
         print("No month and year selected.")
         return
-    num_days = (datetime(year, month + 1, 1) - timedelta(days=1)).day
+    if month == 12:
+        num_days = 31  # December always has 31 days
+    else:
+        num_days = (datetime(year, month + 1, 1) - timedelta(days=1)).day
     start_date = datetime(year, month, 1)
     end_date = datetime(year, month, num_days)
 
