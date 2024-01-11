@@ -18,6 +18,7 @@ def body_import(pdf_files):
     columns = ['ID', 'Rank'] + [col for col in df_all.columns if col not in ['ID', 'Rank']]
     df_all = df_all.reindex(columns=columns)
     df_all = df_all.reset_index(drop=True)
+    df_all = df_all.drop_duplicates(subset="ID")
 
     df_all = df_all.astype(str)
     df_all = df_all.replace(r'\.0', '', regex=True)

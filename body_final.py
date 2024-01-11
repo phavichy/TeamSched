@@ -13,6 +13,28 @@ def get_max_pilots(df_date):
     return max_pilots
 
 
+def modify_pilot_columns(df):
+    # Define the replacement rules for 'Pilot1' and 'Pilot2' to 'Pilot4'
+    replacements_pilot1 = {
+        'LS': 's', 'G': 'g/s', 'd': 'd/s', 'S': 's', 'i': 'i',
+        'T': 't/i', 'B': 'b/i', 'V': 'v', 'X': 'x/i', 'P': 'passive'
+    }
+    replacements_other_pilots = {
+        'V': 'v', 'G': 'g/v', 'd': 'd/v', 'L': '', 'Li': 'p',
+        'T': 't/p', 'i': 'p', 'LB': 'b/p', 'P': 'passive', 'B': 'b/p',
+        'LS': 's', 'X': 'x/p'
+    }
+
+    # Apply replacements for 'Pilot1'
+    df['Pilot1'] = df['Pilot1'].replace(replacements_pilot1, regex=True)
+
+    # Apply replacements for 'Pilot2' to 'Pilot4'
+    for col in ['Pilot2', 'Pilot3', 'Pilot4']:
+        df[col] = df[col].replace(replacements_other_pilots, regex=True)
+
+    return df
+
+
 def body_final(df_date):
     max_pilots = get_max_pilots(df_date)
     # Create vertical dataframe as df_vertical
@@ -28,10 +50,10 @@ def body_final(df_date):
                 cell_dict[f'Pilot{(j + 1)}'] = data
             df_pilots = pd.concat([df_pilots, pd.DataFrame([cell_dict])], ignore_index=True)
         df_pilots = df_pilots.fillna('')
+        df_pilots = modify_pilot_columns(df_pilots)  # Apply modifications here
         df_pilots2 = pd.concat([pd.DataFrame([[i] + [''] * max_pilots], columns=df_pilots.columns), df_pilots]
                                , ignore_index=True)
         df_vertical = pd.concat([df_vertical, df_pilots2], ignore_index=True)
-
         # create final dataframe as df_final and df_final_block
         df_stack = df_pilots.stack()
         df_stack = pd.DataFrame(df_stack)
@@ -56,6 +78,31 @@ def body_final(df_date):
         df_stack = pd.concat([pd.DataFrame([['', i, '']], columns=df_stack.columns), df_stack], ignore_index=True)
         df_final = pd.concat([df_final, df_stack], ignore_index=True)
     df_final = df_final.drop(0)
+
+    special_code_mappings = {
+        's': 'SVCCQ', 'v': 'SVCCQ',
+        'g/s': 'PICUS', 'g/v': 'PICUS',
+        'd/s': 'D', 'd/v': 'D',
+        'i': 'RI', 'p': 'RI',
+        't/i': 'LIFUS', 't/p': 'LIFUS',
+        'b/i': 'Base Release', 'b/p': 'Base Release',
+        'x/i': 'X', 'x/p': 'X'
+    }
+
+    # Shifting the pilot up to the Flight Number Row
+    df_final['P1'] = df_final['Code'].shift(-1)
+    df_final['P2'] = df_final['Code'].shift(-2)
+    df_final['P3'] = df_final['Code'].shift(-3)
+    df_final['P4'] = df_final['Code'].shift(-4)
+    for index, row in df_final.iterrows():
+        if re.search(r'\b\d{3,4}\b', str(row['Data'])):
+            for p_col in ['P1', 'P2', 'P3', 'P4']:
+                pilot_code = row[p_col]
+                if pilot_code in special_code_mappings:
+                    df_final.at[index, 'Code'] = special_code_mappings[pilot_code]
+                    break
+    df_final.drop(columns=['P1', 'P2', 'P3', 'P4'], inplace=True)
+
     df_final_block = df_final.copy()
 
     df_final['next_data'] = df_final['Data'].shift(-1)
@@ -104,4 +151,3 @@ def count_flights(df_final):
     df_flightcounts = df_flightcounts.sort_values(by='Flight Number')
 
     return df_flightcounts
-
