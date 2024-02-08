@@ -16,13 +16,13 @@ def get_max_pilots(df_date):
 def modify_pilot_columns(df):
     # Define the replacement rules for 'Pilot1' and 'Pilot2' to 'Pilot4'
     replacements_pilot1 = {
-        'LS': 's', 'G': 'g/s', 'd': 'd/s', 'S': 's', 'i': 'i',
+        'LS': 's', 'G': 'g/s', 'd': 'd/s', 'S': 's', 'i': 'i', 'I': 'i',
         'T': 't/i', 'B': 'b/i', 'V': 'v', 'X': 'x/i', 'P': 'passive'
     }
     replacements_other_pilots = {
-        'V': 'v', 'G': 'g/v', 'd': 'd/v', 'L': '', 'Li': 'p',
+        'V': 'v', 'G': 'g/v', 'd': 'd/v', 'L': '', 'Li': 'p', 'I': 'p',
         'T': 't/p', 'i': 'p', 'LB': 'b/p', 'P': 'passive', 'B': 'b/p',
-        'LS': 's', 'X': 'x/p'
+        'LS': 's', 'X': 'x/p', 'S': 's'
     }
 
     # Apply replacements for 'Pilot1'
