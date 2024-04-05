@@ -17,12 +17,12 @@ def modify_pilot_columns(df):
     # Define the replacement rules for 'Pilot1' and 'Pilot2' to 'Pilot4'
     replacements_pilot1 = {
         'LS': 's', 'G': 'g/s', 'd': 'd/s', 'S': 's', 'i': 'i', 'I': 'i',
-        'T': 't/i', 'B': 'b/i', 'V': 'v', 'X': 'x/i', 'P': 'passive'
+        'T': 't/i', 'B': 'b/i', 'V': 'v', 'X': 'x/i', 'P': 'passive', 'E': 'e/i'
     }
     replacements_other_pilots = {
         'V': 'v', 'G': 'g/v', 'd': 'd/v', 'L': '', 'Li': 'p', 'I': 'p',
         'T': 't/p', 'i': 'p', 'LB': 'b/p', 'P': 'passive', 'B': 'b/p',
-        'LS': 's', 'X': 'x/p', 'S': 's'
+        'LS': 's', 'X': 'x/p', 'S': 's', 'E': 'e/p'
     }
 
     # Apply replacements for 'Pilot1'
@@ -86,7 +86,7 @@ def body_final(df_date):
         'i': 'RI', 'p': 'RI',
         't/i': 'LIFUS', 't/p': 'LIFUS',
         'b/i': 'Base Release', 'b/p': 'Base Release',
-        'x/i': 'X', 'x/p': 'X'
+        'x/i': 'X', 'x/p': 'X', 'e/i': 'E', 'e/p': 'E'
     }
 
     # Shifting the pilot up to the Flight Number Row
